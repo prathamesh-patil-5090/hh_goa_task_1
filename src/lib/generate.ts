@@ -381,6 +381,7 @@ export async function generatePfpFrame(photo: CanvasImageSource): Promise<Blob> 
   fillRoundRect(ctx, size / 2 - 150, inset + 22, 300, 44, 22, BRAND.pink);
   ctx.fillStyle = BRAND.white;
   ctx.font = `800 18px ${mono}`;
+  ctx.textAlign = "center";
   ctx.fillText("OFFICIAL PFP FRAME", size / 2, inset + 50);
 
   return canvasToBlob(canvas, "image/png");

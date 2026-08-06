@@ -34,11 +34,11 @@ body::before {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background-image: url("/brand/sunrise_bg.jpg");
+  background-image: url("/brand/site_green_bg.png");
   background-size: cover;
-  background-position: center top;
-  opacity: 0.14;
-  mix-blend-mode: soft-light;
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  opacity: 0.75;
   z-index: 0;
 }
 
