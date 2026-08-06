@@ -16,9 +16,10 @@ export default function HomePage() {
             </span>
           </Link>
           <div className="topbar-sub-text">
-            <span>{EVENT.place}</span>
-            <span>·</span>
-            <span>{EVENT.dates}</span>
+            <span className="sub-left">{EVENT.place}</span>
+            <span className="sub-mid">·</span>
+            <span className="sub-right">{EVENT.dates}</span>
+            <span className="topbar-mobile-studio">{EVENT.studio}</span>
           </div>
         </div>
         <div className="topbar-studio-section">
@@ -53,12 +54,18 @@ export default function HomePage() {
       <Generator />
 
       <footer className="footer">
-        <span>
-          {EVENT.full} · {EVENT.dates}
-        </span>
-        <a href="https://hhgoa.com/" target="_blank" rel="noreferrer">
-          hhgoa.com
-        </a>
+        <div className="footer-content">
+          <span>
+            {EVENT.full} · {EVENT.dates} · <strong className="footer-hashtag">{EVENT.hashtag}</strong>
+          </span>
+          <div className="footer-right">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/2-47.svg" alt="2:47pm Studio" className="footer-studio-img" />
+            <a href="https://hhgoa.com/" target="_blank" rel="noreferrer" className="footer-link">
+              hhgoa.com
+            </a>
+          </div>
+        </div>
       </footer>
     </div>
   );

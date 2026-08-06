@@ -12,6 +12,8 @@ export default function Generator() {
   const [format, setFormat] = useState<Format>("id");
   const [name, setName] = useState("");
   const [stack, setStack] = useState("");
+  const [teamName, setTeamName] = useState("");
+  const [teamCode, setTeamCode] = useState("");
   const [photo, setPhoto] = useState<HTMLImageElement | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [blob, setBlob] = useState<Blob | null>(null);
@@ -33,8 +35,8 @@ export default function Generator() {
   const shareBtnRef = useRef<HTMLButtonElement>(null);
 
   const builderTitle = useMemo(
-    () => generateBuilderTitle(`${name}|${stack}|${format}`),
-    [name, stack, format],
+    () => generateBuilderTitle(`${name}|${stack}|${teamName}|${teamCode}|${format}`),
+    [name, stack, teamName, teamCode, format],
   );
 
   // GSAP smooth sliding indicator & frame transition
@@ -154,6 +156,8 @@ export default function Generator() {
                   photo,
                   name,
                   stack,
+                  teamName,
+                  teamCode,
                   builderTitle,
                 });
           if (cancelled) return;
@@ -175,7 +179,7 @@ export default function Generator() {
     return () => {
       cancelled = true;
     };
-  }, [photo, format, name, stack, builderTitle]);
+  }, [photo, format, name, stack, teamName, teamCode, builderTitle]);
 
   function download() {
     if (!blob || !previewUrl) return;
@@ -282,6 +286,26 @@ export default function Generator() {
                 maxLength={48}
               />
             </label>
+            <div className="fields-row">
+              <label>
+                <span>Team Name</span>
+                <input
+                  value={teamName}
+                  onChange={(e) => setTeamName(e.target.value)}
+                  placeholder="e.g. WaveHackers"
+                  maxLength={36}
+                />
+              </label>
+              <label>
+                <span>Team Code</span>
+                <input
+                  value={teamCode}
+                  onChange={(e) => setTeamCode(e.target.value)}
+                  placeholder="e.g. HH-GOA-042"
+                  maxLength={24}
+                />
+              </label>
+            </div>
             <div className="assigned">
               <span>Assigned builder class</span>
               <p>{builderTitle}</p>

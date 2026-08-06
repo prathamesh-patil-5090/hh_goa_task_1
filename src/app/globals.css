@@ -111,6 +111,10 @@ a {
   color: var(--accent);
 }
 
+.topbar-mobile-studio {
+  display: none;
+}
+
 .topbar-studio-section {
   display: flex;
   align-items: center;
@@ -305,6 +309,18 @@ a {
   margin-top: 1rem;
 }
 
+.fields-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+@media (max-width: 480px) {
+  .fields-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .fields label {
   display: grid;
   gap: 0.35rem;
@@ -340,6 +356,11 @@ a {
   padding: 0.9rem 1rem;
   background: var(--primary);
   color: var(--offwhite);
+}
+
+.assigned span {
+  color: var(--accent);
+  opacity: 0.95;
 }
 
 .assigned p {
@@ -471,15 +492,36 @@ a {
 
 .footer {
   margin-top: 2.5rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem 1.25rem;
-  justify-content: space-between;
-  align-items: center;
   font-size: 0.75rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: color-mix(in srgb, var(--offwhite) 70%, transparent);
+}
+
+.footer-content {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+}
+
+.footer-hashtag {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.footer-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.footer-studio-img {
+  height: 24px;
+  width: auto;
+  opacity: 0.9;
 }
 
 .footer a {
@@ -587,10 +629,58 @@ a {
 }
 
 @media (max-width: 640px) {
+  .site {
+    padding: 0.85rem 0.75rem 2.5rem;
+  }
+
   .topbar {
+    display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 1.25rem;
+    align-items: stretch;
+    gap: 0.4rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .topbar-brand-section {
+    width: 100%;
+    gap: 0.35rem;
+  }
+
+  .brand-logo-wrap {
+    width: 100%;
+  }
+
+  .hacker-house-img {
+    height: auto;
+    width: 100%;
+    max-height: 76px;
+    object-fit: fill;
+  }
+
+  .goa-hindi-badge {
+    height: clamp(32px, 10vw, 56px);
+    left: 51.5%;
+    top: 50%;
+    transform: translate(-50%, -48%);
+  }
+
+  .topbar-sub-text {
+    width: 100%;
+    font-size: clamp(0.48rem, 2.35vw, 0.75rem);
+    letter-spacing: 0.04em;
+  }
+
+  .topbar-sub-text .sub-mid {
+    display: none;
+  }
+
+  .topbar-mobile-studio {
+    display: inline-block;
+    color: var(--accent);
+  }
+
+  .topbar-studio-section {
+    display: none;
   }
 
   .actions {

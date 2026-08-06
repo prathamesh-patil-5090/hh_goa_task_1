@@ -13,11 +13,43 @@ export type IdCardInput = {
   photo: CanvasImageSource;
   name: string;
   stack: string;
+  teamName?: string;
+  teamCode?: string;
   builderTitle?: string;
 };
 
 const W = 1080;
 const H = 1350;
+
+function drawHalfSun(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+  ctx.save();
+  ctx.fillStyle = BRAND.accent;
+  ctx.strokeStyle = BRAND.accent;
+  ctx.lineWidth = 4;
+  ctx.lineCap = "round";
+
+  // Rising half sun (semicircle)
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, Math.PI, 2 * Math.PI);
+  ctx.closePath();
+  ctx.fill();
+
+  // 7 rays radiating from upper half
+  const rays = 7;
+  const rayLen = r * 0.75;
+  for (let i = 0; i < rays; i++) {
+    const angle = Math.PI + (i * Math.PI) / (rays - 1);
+    const x1 = cx + Math.cos(angle) * (r + 5);
+    const y1 = cy + Math.sin(angle) * (r + 5);
+    const x2 = cx + Math.cos(angle) * (r + 5 + rayLen);
+    const y2 = cy + Math.sin(angle) * (r + 5 + rayLen);
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
 
 export async function generateIdCard(input: IdCardInput): Promise<Blob> {
   await waitForFonts();
@@ -71,23 +103,59 @@ export async function generateIdCard(input: IdCardInput): Promise<Blob> {
   fillRoundRect(ctx, cardX, cardY, cardW, cardH, 28, BRAND.offwhite);
   ctx.restore();
 
-  // Top brand strip
-  fillRoundRect(ctx, cardX, cardY, cardW, 118, 28, BRAND.primary);
-  ctx.fillStyle = BRAND.primary;
-  ctx.fillRect(cardX, cardY + 70, cardW, 48);
+  // Beach trees background texture layer
+  try {
+    const beachBg = await loadImage("/brand/card_beach_bg.png");
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(cardX, cardY, cardW, cardH, 28);
+    ctx.clip();
+    ctx.globalAlpha = 0.12;
+    drawCover(ctx, beachBg, cardX, cardY, cardW, cardH);
+    ctx.restore();
+  } catch {
+    // optional decorative layer
+  }
 
-  ctx.fillStyle = BRAND.accent;
-  ctx.font = `800 22px ${mono}`;
-  ctx.textAlign = "left";
-  ctx.fillText("BUILDER PASS · 2026", cardX + 40, cardY + 48);
+  // Top brand strip — matching HACKER HOUSE + Goa Hindi calligraphy (solid yellow) + sun icon
+  const stripH = 132;
+  fillRoundRect(ctx, cardX, cardY, cardW, stripH, 28, BRAND.primary);
+  ctx.fillStyle = BRAND.primary;
+  ctx.fillRect(cardX, cardY + 70, cardW, 62);
 
   ctx.fillStyle = BRAND.white;
   ctx.font = `700 52px ${display}`;
-  ctx.fillText(EVENT.full, cardX + 40, cardY + 100);
+  ctx.textAlign = "left";
+  ctx.fillText("HACKER HOUSE", cardX + 40, cardY + 66);
 
-  // Accent tick
-  ctx.fillStyle = BRAND.pink;
-  ctx.fillRect(cardX + cardW - 120, cardY + 36, 64, 10);
+  const hhWidth = ctx.measureText("HACKER HOUSE").width;
+
+  try {
+    const goaHindiImg = await loadImage("/brand/goa_hindi_solid.svg");
+    const goaH = 72;
+    const goaW = (goaHindiImg.width / goaHindiImg.height) * goaH || 72;
+    ctx.drawImage(goaHindiImg, cardX + 40 + hhWidth + 16, cardY + 2, goaW, goaH);
+  } catch {
+    ctx.fillStyle = BRAND.accent;
+    ctx.font = `700 52px ${display}`;
+    ctx.fillText("गोवा", cardX + 40 + hhWidth + 16, cardY + 66);
+  }
+
+  ctx.fillStyle = BRAND.accent;
+  ctx.font = `800 20px ${mono}`;
+  ctx.fillText("OPEN TRIALS · OCT 28–31", cardX + 40, cardY + 104);
+
+  try {
+    const studioImg = await loadImage("/brand/2-47.svg");
+    const studioH = 76;
+    const studioW = (studioImg.width / studioImg.height) * studioH || 124;
+    ctx.drawImage(studioImg, cardX + cardW - 40 - studioW, cardY + 28, studioW, studioH);
+  } catch {
+    ctx.fillStyle = BRAND.accent;
+    ctx.font = `800 20px ${mono}`;
+    ctx.textAlign = "right";
+    ctx.fillText("2:47 PM STUDIO", cardX + cardW - 40, cardY + 84);
+  }
 
   // Photo circle
   const photoSize = 420;
@@ -138,8 +206,27 @@ export async function generateIdCard(input: IdCardInput): Promise<Blob> {
   ctx.font = `700 26px ${mono}`;
   ctx.fillText(stack, W / 2, textY + 12);
 
+  // Team Name & Team Code
+  const tName = (input.teamName || "").trim().toUpperCase();
+  const tCode = (input.teamCode || "").trim().toUpperCase();
+  const teamText = [
+    tName ? `TEAM: ${tName}` : null,
+    tCode ? `CODE: ${tCode}` : null,
+  ]
+    .filter(Boolean)
+    .join("   ·   ");
+
+  let teamOffsetY = 0;
+  if (teamText) {
+    ctx.fillStyle = BRAND.primary;
+    ctx.font = `800 20px ${mono}`;
+    ctx.textAlign = "center";
+    ctx.fillText(teamText, W / 2, textY + 48);
+    teamOffsetY = 38;
+  }
+
   // Builder class badge
-  const badgeY = textY + 56;
+  const badgeY = textY + 52 + teamOffsetY;
   const badgeW = cardW - 80;
   const badgeX = cardX + 40;
   ctx.font = `700 42px ${display}`;
@@ -166,6 +253,14 @@ export async function generateIdCard(input: IdCardInput): Promise<Blob> {
   ctx.font = `700 20px ${mono}`;
   ctx.textAlign = "left";
   ctx.fillText(EVENT.place, cardX + 40, footY);
+
+  ctx.fillStyle = BRAND.pink;
+  ctx.font = `800 20px ${mono}`;
+  ctx.textAlign = "center";
+  ctx.fillText(EVENT.hashtag, W / 2, footY);
+
+  ctx.fillStyle = BRAND.primary;
+  ctx.font = `700 20px ${mono}`;
   ctx.textAlign = "right";
   ctx.fillText(EVENT.dates, cardX + cardW - 40, footY);
 
@@ -241,22 +336,46 @@ export async function generatePfpFrame(photo: CanvasImageSource): Promise<Blob> 
   }
 
   // Bottom brand banner overlay
-  const bannerH = 132;
+  const bannerH = 138;
   const bannerY = size - inset - bannerH;
-  ctx.fillStyle = "rgba(11,104,57,0.92)";
+  ctx.fillStyle = "rgba(11,104,57,0.95)";
   ctx.fillRect(inset, bannerY, size - inset * 2, bannerH);
 
   ctx.fillStyle = BRAND.accent;
   ctx.fillRect(inset, bannerY, size - inset * 2, 8);
 
   ctx.fillStyle = BRAND.white;
-  ctx.textAlign = "center";
-  ctx.font = `700 56px ${display}`;
-  ctx.fillText("HACKER HOUSE GOA 2026", size / 2, bannerY + 62);
+  ctx.textAlign = "left";
+  ctx.font = `700 52px ${display}`;
+  ctx.fillText("HACKER HOUSE", inset + 40, bannerY + 68);
+
+  const hhPfpW = ctx.measureText("HACKER HOUSE").width;
+  try {
+    const goaHindiImg = await loadImage("/brand/goa_hindi_solid.svg");
+    const goaH = 72;
+    const goaW = (goaHindiImg.width / goaHindiImg.height) * goaH || 72;
+    ctx.drawImage(goaHindiImg, inset + 40 + hhPfpW + 16, bannerY + 4, goaW, goaH);
+  } catch {
+    ctx.fillStyle = BRAND.accent;
+    ctx.font = `700 52px ${display}`;
+    ctx.fillText("गोवा", inset + 40 + hhPfpW + 16, bannerY + 68);
+  }
 
   ctx.fillStyle = BRAND.accent;
-  ctx.font = `800 22px ${mono}`;
-  ctx.fillText(`${EVENT.place}  ·  ${EVENT.hashtag}`, size / 2, bannerY + 102);
+  ctx.font = `800 20px ${mono}`;
+  ctx.fillText(`OPEN TRIALS · OCT 28–31  ·  ${EVENT.hashtag}`, inset + 40, bannerY + 110);
+
+  try {
+    const studioImg = await loadImage("/brand/2-47.svg");
+    const studioH = 76;
+    const studioW = (studioImg.width / studioImg.height) * studioH || 124;
+    ctx.drawImage(studioImg, size - inset - 40 - studioW, bannerY + 30, studioW, studioH);
+  } catch {
+    ctx.fillStyle = BRAND.accent;
+    ctx.font = `800 20px ${mono}`;
+    ctx.textAlign = "right";
+    ctx.fillText("2:47 PM STUDIO", size - inset - 40, bannerY + 88);
+  }
 
   // Top mini label
   fillRoundRect(ctx, size / 2 - 150, inset + 22, 300, 44, 22, BRAND.pink);
