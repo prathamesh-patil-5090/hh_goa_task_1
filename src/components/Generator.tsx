@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import gsap from "gsap";
 import { EVENT, generateBuilderTitle, shareCaption } from "@/lib/brand";
 import { generateIdCard, generatePfpFrame } from "@/lib/generate";
 import { blobToImage, normalizePhotoFile } from "@/lib/photo";
@@ -21,10 +22,95 @@ export default function Generator() {
   const fileRef = useRef<HTMLInputElement>(null);
   const latestUrl = useRef<string | null>(null);
 
+  const toggleRef = useRef<HTMLDivElement>(null);
+  const indicatorRef = useRef<HTMLDivElement>(null);
+  const idBtnRef = useRef<HTMLButtonElement>(null);
+  const pfpBtnRef = useRef<HTMLButtonElement>(null);
+  const previewFrameRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const emptyRef = useRef<HTMLDivElement>(null);
+  const downloadBtnRef = useRef<HTMLButtonElement>(null);
+  const shareBtnRef = useRef<HTMLButtonElement>(null);
+
   const builderTitle = useMemo(
     () => generateBuilderTitle(`${name}|${stack}|${format}`),
     [name, stack, format],
   );
+
+  // GSAP smooth sliding indicator & frame transition
+  useEffect(() => {
+    const activeBtn = format === "id" ? idBtnRef.current : pfpBtnRef.current;
+    if (!activeBtn || !indicatorRef.current || !toggleRef.current) return;
+
+    const toggleRect = toggleRef.current.getBoundingClientRect();
+    const btnRect = activeBtn.getBoundingClientRect();
+
+    const leftOffset = btnRect.left - toggleRect.left;
+    const btnWidth = btnRect.width;
+
+    gsap.to(indicatorRef.current, {
+      x: leftOffset,
+      width: btnWidth,
+      duration: 0.42,
+      ease: "power3.out",
+    });
+
+    gsap.fromTo(
+      activeBtn,
+      { scale: 0.93 },
+      { scale: 1, duration: 0.35, ease: "back.out(2)" },
+    );
+
+    if (previewFrameRef.current) {
+      gsap.fromTo(
+        previewFrameRef.current,
+        { scale: 0.97, opacity: 0.85 },
+        { scale: 1, opacity: 1, duration: 0.4, ease: "power2.out" },
+      );
+    }
+  }, [format]);
+
+  // GSAP smooth animation when generated image preview changes
+  useEffect(() => {
+    if (previewUrl && imgRef.current) {
+      gsap.fromTo(
+        imgRef.current,
+        { scale: 1.08, opacity: 0, filter: "blur(10px)" },
+        { scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.55, ease: "power3.out" },
+      );
+    }
+  }, [previewUrl]);
+
+  // GSAP animation for empty preview state
+  useEffect(() => {
+    if (!previewUrl && emptyRef.current) {
+      gsap.fromTo(
+        emptyRef.current,
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" },
+      );
+    }
+  }, [previewUrl, format]);
+
+  // GSAP spring animation when download & share buttons become active
+  useEffect(() => {
+    if (blob) {
+      if (downloadBtnRef.current) {
+        gsap.fromTo(
+          downloadBtnRef.current,
+          { scale: 0.9, opacity: 0.6 },
+          { scale: 1, opacity: 1, duration: 0.4, ease: "back.out(1.8)" },
+        );
+      }
+      if (shareBtnRef.current) {
+        gsap.fromTo(
+          shareBtnRef.current,
+          { scale: 0.9, opacity: 0.6 },
+          { scale: 1, opacity: 1, duration: 0.4, delay: 0.07, ease: "back.out(1.8)" },
+        );
+      }
+    }
+  }, [blob]);
 
   useEffect(() => {
     return () => {
@@ -138,10 +224,12 @@ export default function Generator() {
   return (
     <section className="generator" id="make">
       <div className="gen-panel">
-        <div className="format-toggle" role="tablist" aria-label="Output format">
+        <div className="format-toggle" role="tablist" aria-label="Output format" ref={toggleRef}>
+          <div className="format-toggle-indicator" ref={indicatorRef} />
           <button
             type="button"
             role="tab"
+            ref={idBtnRef}
             aria-selected={format === "id"}
             className={format === "id" ? "active" : ""}
             onClick={() => setFormat("id")}
@@ -151,6 +239,7 @@ export default function Generator() {
           <button
             type="button"
             role="tab"
+            ref={pfpBtnRef}
             aria-selected={format === "pfp"}
             className={format === "pfp" ? "active" : ""}
             onClick={() => setFormat("pfp")}
@@ -208,13 +297,13 @@ export default function Generator() {
         {error ? <p className="error">{error}</p> : null}
       </div>
 
-      <div className="preview-panel">
+      <div className="preview-panel" ref={previewFrameRef}>
         <div className={`preview-frame ${format}`}>
           {previewUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={previewUrl} alt="Generated HH Goa graphic preview" />
+            <img src={previewUrl} alt="Generated HH Goa graphic preview" ref={imgRef} />
           ) : (
-            <div className="preview-empty">
+            <div className="preview-empty" ref={emptyRef}>
               <p>Your {format === "id" ? "builder ID" : "PFP frame"} appears here</p>
               <span>{busy || isPending ? "Rendering…" : "Upload to start"}</span>
             </div>
@@ -224,6 +313,7 @@ export default function Generator() {
         <div className="actions">
           <button
             type="button"
+            ref={downloadBtnRef}
             className="btn accent"
             disabled={!blob || busy}
             onClick={download}
@@ -232,6 +322,7 @@ export default function Generator() {
           </button>
           <button
             type="button"
+            ref={shareBtnRef}
             className="btn pink"
             disabled={!blob || sharing || busy}
             onClick={() => void shareToX()}

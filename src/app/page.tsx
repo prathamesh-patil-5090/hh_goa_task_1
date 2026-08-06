@@ -6,15 +6,24 @@ export default function HomePage() {
   return (
     <div className="site">
       <header className="topbar">
-        <Link className="brand-mark" href="/" aria-label="HH Goa home">
+        <div className="topbar-brand-section">
+          <Link className="brand-mark" href="/" aria-label="Hacker House Goa home">
+            <span className="brand-logo-wrap">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/brand/Hacker_house.png" alt="Hacker House" className="hacker-house-img" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/brand/goa_hindi.svg" alt="गोवा" className="goa-hindi-badge" />
+            </span>
+          </Link>
+          <div className="topbar-sub-text">
+            <span>{EVENT.place}</span>
+            <span>·</span>
+            <span>{EVENT.dates}</span>
+          </div>
+        </div>
+        <div className="topbar-studio-section">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/Hacker_house.png" alt="" />
-          <span>HH Goa {EVENT.year}</span>
-        </Link>
-        <div className="topbar-meta">
-          {EVENT.place}
-          <br />
-          {EVENT.dates}
+          <img src="/brand/2-47.svg" alt="2:47pm Studio" className="topbar-studio-img" />
         </div>
       </header>
 

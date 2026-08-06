@@ -58,37 +58,70 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 2rem;
   margin-bottom: 2.5rem;
 }
 
-.brand-mark {
+.topbar-brand-section {
   display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.brand-mark {
+  display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
   text-decoration: none;
 }
 
-.brand-mark img {
-  height: 36px;
+.brand-logo-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.hacker-house-img {
+  height: 72px;
   width: auto;
+  display: block;
 }
 
-.brand-mark span {
-  font-family: Imbue, Georgia, serif;
+.goa-hindi-badge {
+  position: absolute;
+  left: 51.5%;
+  top: 50%;
+  transform: translate(-50%, -48%);
+  height: 58px;
+  width: auto;
+  pointer-events: none;
+  z-index: 2;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4));
+}
+
+.topbar-sub-text {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  font-family: "Victor Mono", ui-monospace, monospace;
   font-weight: 700;
-  font-size: 1.55rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  line-height: 1;
-}
-
-.topbar-meta {
-  font-size: 0.72rem;
+  font-size: 0.88rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--offwhite) 72%, transparent);
-  text-align: right;
+  color: var(--accent);
+}
+
+.topbar-studio-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+}
+
+.topbar-studio-img {
+  height: 76px;
+  width: auto;
+  display: block;
 }
 
 .hero {
@@ -177,6 +210,7 @@ a {
 }
 
 .format-toggle {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.4rem;
@@ -184,9 +218,25 @@ a {
   padding: 0.3rem;
   background: color-mix(in srgb, var(--primary) 10%, var(--offwhite));
   border-radius: 999px;
+  overflow: hidden;
+}
+
+.format-toggle-indicator {
+  position: absolute;
+  top: 0.3rem;
+  bottom: 0.3rem;
+  left: 0;
+  background: var(--primary);
+  border-radius: 999px;
+  box-shadow: 0 3px 10px rgba(11, 104, 57, 0.3);
+  pointer-events: none;
+  z-index: 1;
+  will-change: transform, width;
 }
 
 .format-toggle button {
+  position: relative;
+  z-index: 2;
   border: 0;
   background: transparent;
   color: var(--primary);
@@ -198,10 +248,11 @@ a {
   padding: 0.7rem 0.5rem;
   border-radius: 999px;
   cursor: pointer;
+  transition: color 0.3s ease;
 }
 
 .format-toggle button.active {
-  background: var(--primary);
+  background: transparent;
   color: var(--accent);
 }
 
@@ -516,6 +567,7 @@ a {
     opacity: 0;
     transform: translateY(18px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -527,6 +579,7 @@ a {
     opacity: 0;
     transform: scale(0.98);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -534,8 +587,10 @@ a {
 }
 
 @media (max-width: 640px) {
-  .topbar-meta {
-    display: none;
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
   }
 
   .actions {

@@ -9,13 +9,14 @@ export const BRAND = {
 } as const;
 
 export const EVENT = {
-  name: "HH GOA",
+  name: "GOA",
+  nameHindi: "गोवा",
   full: "HACKER HOUSE GOA",
   year: "2026",
   dates: "28 – 31 OCT 2026",
   place: "GOA, INDIA",
   hashtag: "#FrameInGoa",
-  studio: "2:47 pm Studio",
+  studio: "2:47 PM STUDIO",
 } as const;
 
 export const BUILDER_TITLES = [
