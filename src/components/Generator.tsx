@@ -41,27 +41,32 @@ export default function Generator() {
 
   // GSAP smooth sliding indicator & frame transition
   useEffect(() => {
+    const updateIndicator = () => {
+      const activeBtn = format === "id" ? idBtnRef.current : pfpBtnRef.current;
+      if (!activeBtn || !indicatorRef.current) return;
+
+      const leftOffset = activeBtn.offsetLeft;
+      const btnWidth = activeBtn.offsetWidth;
+
+      gsap.to(indicatorRef.current, {
+        x: leftOffset,
+        width: btnWidth,
+        duration: 0.38,
+        ease: "power3.out",
+      });
+    };
+
+    updateIndicator();
+    window.addEventListener("resize", updateIndicator);
+
     const activeBtn = format === "id" ? idBtnRef.current : pfpBtnRef.current;
-    if (!activeBtn || !indicatorRef.current || !toggleRef.current) return;
-
-    const toggleRect = toggleRef.current.getBoundingClientRect();
-    const btnRect = activeBtn.getBoundingClientRect();
-
-    const leftOffset = btnRect.left - toggleRect.left;
-    const btnWidth = btnRect.width;
-
-    gsap.to(indicatorRef.current, {
-      x: leftOffset,
-      width: btnWidth,
-      duration: 0.42,
-      ease: "power3.out",
-    });
-
-    gsap.fromTo(
-      activeBtn,
-      { scale: 0.93 },
-      { scale: 1, duration: 0.35, ease: "back.out(2)" },
-    );
+    if (activeBtn) {
+      gsap.fromTo(
+        activeBtn,
+        { scale: 0.93 },
+        { scale: 1, duration: 0.35, ease: "back.out(2)" },
+      );
+    }
 
     if (previewFrameRef.current) {
       gsap.fromTo(
@@ -70,6 +75,10 @@ export default function Generator() {
         { scale: 1, opacity: 1, duration: 0.4, ease: "power2.out" },
       );
     }
+
+    return () => {
+      window.removeEventListener("resize", updateIndicator);
+    };
   }, [format]);
 
   // GSAP smooth animation when generated image preview changes
