@@ -2,6 +2,8 @@
 
 Live tool for [Hacker House Goa 2026](https://hhgoa.com/) shortlisting Task #1.
 
+**Live Demo:** [https://hhgoa-id.netlify.app](https://hhgoa-id.netlify.app)
+
 Upload a photo → get a branded **Builder ID** or **PFP frame** in seconds → download PNG → **Share to X** with a pre-filled caption including `#FrameInGoa` and an OG preview of your exact graphic.
 
 ## Features
@@ -51,7 +53,7 @@ Works on any Node host (Vercel, Railway, Render, Fly).
 
 ## Submit checklist
 
-- [ ] Live link
+- [x] Live link: [https://hhgoa-id.netlify.app](https://hhgoa-id.netlify.app)
 - [ ] Post on X with `#FrameInGoa`
 - [ ] Form: https://forms.gle/jM5hTaGvsrfEfixPA
 - Deadline: **11:59 pm, 13 August 2026**
