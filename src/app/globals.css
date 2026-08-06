@@ -32,7 +32,7 @@ body {
 body::before {
   content: "";
   position: fixed;
-  inset: 0;
+  inset: -14px;
   pointer-events: none;
   background-image: url("/brand/site_green_bg.png");
   background-size: cover;
@@ -40,6 +40,27 @@ body::before {
   background-repeat: no-repeat;
   opacity: 0.75;
   z-index: 0;
+  transform-origin: center bottom;
+  animation: gentleBreeze 16s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes gentleBreeze {
+  0% {
+    transform: scale(1) rotate(0deg) translateY(0px);
+  }
+  25% {
+    transform: scale(1.015) rotate(0.45deg) translateY(-4px);
+  }
+  50% {
+    transform: scale(1.008) rotate(-0.35deg) translateY(2px);
+  }
+  75% {
+    transform: scale(1.018) rotate(0.55deg) translateY(-2px);
+  }
+  100% {
+    transform: scale(1) rotate(0deg) translateY(0px);
+  }
 }
 
 a {
