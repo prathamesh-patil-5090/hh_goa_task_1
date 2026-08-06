@@ -15,6 +15,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "gsap": "^3.15.0",
     "heic2any": "^0.0.4",
     "nanoid": "^5.1.16",
     "next": "^15.5.22",
@@ -32,5 +33,9 @@
     "postcss": "^8.5.26",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "postcss": "^8.5.26",
+    "sharp": "^0.35.3"
   }
 }
