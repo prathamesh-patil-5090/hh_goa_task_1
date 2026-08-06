@@ -1,0 +1,36 @@
+{
+  "name": "hh-goa-frame",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HH Goa 2026 Frame / ID Card Generator",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/prathamesh-patil-5090/hh_goa_task_1.git"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "heic2any": "^0.0.4",
+    "nanoid": "^5.1.16",
+    "next": "^15.5.22",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.6",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^26.1.2",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^15.5.22",
+    "postcss": "^8.5.26",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3"
+  }
+}
