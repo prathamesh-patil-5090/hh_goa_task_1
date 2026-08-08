@@ -26,10 +26,10 @@ export async function POST(req: NextRequest) {
       title: title || undefined,
     });
 
-    const origin = req.nextUrl.origin;
-    const site = process.env.NEXT_PUBLIC_SITE_URL || origin;
-    const shareUrl = `${site.replace(/\/$/, "")}/s/${meta.id}`;
-    const imageUrl = `${site.replace(/\/$/, "")}/api/share/${meta.id}`;
+    // Always use this request's origin — that's where the PNG was actually stored.
+    const site = req.nextUrl.origin.replace(/\/$/, "");
+    const shareUrl = `${site}/s/${meta.id}`;
+    const imageUrl = `${site}/api/share/${meta.id}`;
 
     return NextResponse.json({
       id: meta.id,

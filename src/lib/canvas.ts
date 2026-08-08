@@ -1,3 +1,32 @@
+export type CropAdjust = {
+  /** Zoom multiplier on top of cover-fit. 1 = default cover, up to ~3. */
+  scale: number;
+  /** Pan X in [-1, 1]. 0 = centered. */
+  offsetX: number;
+  /** Pan Y in [-1, 1]. 0 = centered. */
+  offsetY: number;
+};
+
+export const DEFAULT_CROP: CropAdjust = { scale: 1, offsetX: 0, offsetY: 0 };
+
+function imageSize(img: CanvasImageSource): { iw: number; ih: number } {
+  const iw =
+    "naturalWidth" in img && (img as HTMLImageElement).naturalWidth
+      ? (img as HTMLImageElement).naturalWidth
+      : (img as HTMLImageElement).width ||
+        (img as ImageBitmap).width ||
+        (img as HTMLCanvasElement).width ||
+        0;
+  const ih =
+    "naturalHeight" in img && (img as HTMLImageElement).naturalHeight
+      ? (img as HTMLImageElement).naturalHeight
+      : (img as HTMLImageElement).height ||
+        (img as ImageBitmap).height ||
+        (img as HTMLCanvasElement).height ||
+        0;
+  return { iw, ih };
+}
+
 /** Draw an image cover-cropped into a destination rect. */
 export function drawCover(
   ctx: CanvasRenderingContext2D,
@@ -6,23 +35,24 @@ export function drawCover(
   dy: number,
   dw: number,
   dh: number,
+  adjust: CropAdjust = DEFAULT_CROP,
 ) {
-  const iw =
-    "naturalWidth" in img && (img as HTMLImageElement).naturalWidth
-      ? (img as HTMLImageElement).naturalWidth
-      : (img as HTMLImageElement).width || (img as ImageBitmap).width || (img as HTMLCanvasElement).width || 0;
-  const ih =
-    "naturalHeight" in img && (img as HTMLImageElement).naturalHeight
-      ? (img as HTMLImageElement).naturalHeight
-      : (img as HTMLImageElement).height || (img as ImageBitmap).height || (img as HTMLCanvasElement).height || 0;
-
+  const { iw, ih } = imageSize(img);
   if (!iw || !ih) return;
 
-  const scale = Math.max(dw / iw, dh / ih);
+  const zoom = Math.max(1, Math.min(3, adjust.scale || 1));
+  const coverScale = Math.max(dw / iw, dh / ih);
+  const scale = coverScale * zoom;
   const sw = dw / scale;
   const sh = dh / scale;
-  const sx = (iw - sw) / 2;
-  const sy = (ih - sh) / 2;
+
+  const maxOx = Math.max(0, (iw - sw) / 2);
+  const maxOy = Math.max(0, (ih - sh) / 2);
+  const ox = Math.max(-1, Math.min(1, adjust.offsetX || 0));
+  const oy = Math.max(-1, Math.min(1, adjust.offsetY || 0));
+
+  const sx = (iw - sw) / 2 - ox * maxOx;
+  const sy = (ih - sh) / 2 - oy * maxOy;
   ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
 }
 

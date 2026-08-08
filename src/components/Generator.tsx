@@ -2,9 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
-import { EVENT, generateBuilderTitle, shareCaption } from "@/lib/brand";
+import { generateBuilderTitle, shareCaption } from "@/lib/brand";
+import { CropAdjust, DEFAULT_CROP } from "@/lib/canvas";
 import { generateIdCard, generatePfpFrame } from "@/lib/generate";
 import { blobToImage, normalizePhotoFile } from "@/lib/photo";
+import PhotoAdjuster from "@/components/PhotoAdjuster";
 
 type Format = "id" | "pfp";
 
@@ -24,6 +26,8 @@ export default function Generator() {
   const [debouncedTeamCode, setDebouncedTeamCode] = useState("");
 
   const [photo, setPhoto] = useState<HTMLImageElement | null>(null);
+  const [crop, setCrop] = useState<CropAdjust>(DEFAULT_CROP);
+  const [debouncedCrop, setDebouncedCrop] = useState<CropAdjust>(DEFAULT_CROP);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [blob, setBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +58,12 @@ export default function Generator() {
     }, 300);
     return () => clearTimeout(handler);
   }, [name, stack, teamName, teamCode]);
+
+  // Faster debounce for crop so dragging still feels live without thrashing
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedCrop(crop), 80);
+    return () => clearTimeout(handler);
+  }, [crop]);
 
   const builderTitle = useMemo(
     () =>
@@ -158,6 +168,8 @@ export default function Generator() {
     try {
       const normalized = await normalizePhotoFile(file);
       const img = await blobToImage(normalized);
+      setCrop(DEFAULT_CROP);
+      setDebouncedCrop(DEFAULT_CROP);
       setPhoto(img);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not read photo");
@@ -182,7 +194,7 @@ export default function Generator() {
       try {
         const out =
           format === "pfp"
-            ? await generatePfpFrame(photo)
+            ? await generatePfpFrame(photo, debouncedCrop)
             : await generateIdCard({
                 photo,
                 name: debouncedName,
@@ -190,6 +202,11 @@ export default function Generator() {
                 teamName: debouncedTeamName,
                 teamCode: debouncedTeamCode,
                 builderTitle,
+                crop: debouncedCrop,
+                qrUrl:
+                  typeof window !== "undefined"
+                    ? window.location.origin
+                    : "https://hhgoa.com",
               });
         if (cancelled) return;
         if (latestUrl.current) URL.revokeObjectURL(latestUrl.current);
@@ -207,7 +224,16 @@ export default function Generator() {
     return () => {
       cancelled = true;
     };
-  }, [photo, format, debouncedName, debouncedStack, debouncedTeamName, debouncedTeamCode, builderTitle]);
+  }, [
+    photo,
+    format,
+    debouncedName,
+    debouncedStack,
+    debouncedTeamName,
+    debouncedTeamCode,
+    builderTitle,
+    debouncedCrop,
+  ]);
 
   function download() {
     if (!blob || !previewUrl) return;
@@ -222,6 +248,8 @@ export default function Generator() {
 
   function resetForm() {
     setPhoto(null);
+    setCrop(DEFAULT_CROP);
+    setDebouncedCrop(DEFAULT_CROP);
     setName("");
     setStack("");
     setTeamName("");
@@ -233,8 +261,6 @@ export default function Generator() {
     if (fileRef.current) fileRef.current.value = "";
   }
 
-  // B1 + B2: window.open called SYNCHRONOUSLY first (before any await)
-  // so popup blockers can't block it. Upload is fire-and-forget — X opens regardless.
   async function shareToX() {
     if (!blob) return;
     setSharing(true);
@@ -245,45 +271,65 @@ export default function Generator() {
       debouncedName || undefined,
       format === "id" ? builderTitle : undefined,
     );
+    const file = new File([blob], "hh-goa-2026-frame.png", { type: "image/png" });
 
-    // Step 1: Open X immediately (synchronous — cannot be popup-blocked)
-    const intent = `https://x.com/intent/post?text=${encodeURIComponent(fullCaption)}`;
-    window.open(intent, "_blank", "noopener,noreferrer");
-
-    // Step 2: Download PNG
-    download();
-
-    // Step 3: Try clipboard (silent fail on iOS Safari — no crash)
-    let copiedImage = false;
+    // 1) Mobile / supporting browsers: native share sheet with the PNG attached
     try {
-      if (navigator?.clipboard?.write) {
-        await navigator.clipboard.write([
-          new ClipboardItem({ "image/png": blob }),
-        ]);
-        copiedImage = true;
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          text: fullCaption,
+          title: "HH Goa 2026 Frame",
+        });
+        setToast("Shared with your graphic attached.");
+        setSharing(false);
+        return;
       }
-    } catch {
-      // gracefully skip — clipboard not available on all platforms
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") {
+        setSharing(false);
+        return;
+      }
+      // fall through to X intent + OG link
     }
 
-    // Step 4: Background metadata upload (B2: does NOT block X redirect)
+    // 2) Open a tab synchronously (avoids popup blockers), then point it at X
+    //    with caption + share URL so the tweet card previews the graphic.
+    const popup = window.open("about:blank", "hhgoa_share");
+
     try {
       const form = new FormData();
       form.append("image", blob, "frame.png");
       form.append("format", format);
       form.append("name", debouncedName);
       form.append("title", format === "id" ? builderTitle : "PFP Frame");
-      await fetch("/api/share", { method: "POST", body: form });
-    } catch {
-      // ignore — metadata upload is optional
-    }
 
-    setToast(
-      copiedImage
-        ? "Opening X! PNG copied to clipboard (Ctrl+V to paste)."
-        : "Opening X! PNG downloaded — attach it to your post.",
-    );
-    setSharing(false);
+      const res = await fetch("/api/share", { method: "POST", body: form });
+      const data = (await res.json()) as {
+        shareUrl?: string;
+        error?: string;
+      };
+      if (!res.ok || !data.shareUrl) {
+        throw new Error(data.error || "Could not prepare share link");
+      }
+
+      const intent = `https://x.com/intent/post?text=${encodeURIComponent(fullCaption)}&url=${encodeURIComponent(data.shareUrl)}`;
+      if (popup && !popup.closed) {
+        popup.location.href = intent;
+      } else {
+        window.location.href = intent;
+      }
+      setToast("Opening X with your graphic preview linked.");
+    } catch (e) {
+      const fallback = `https://x.com/intent/post?text=${encodeURIComponent(fullCaption)}`;
+      if (popup && !popup.closed) popup.location.href = fallback;
+      else window.open(fallback, "_blank");
+      download();
+      setError(e instanceof Error ? e.message : "Share upload failed");
+      setToast("X opened — PNG downloaded so you can attach it.");
+    } finally {
+      setSharing(false);
+    }
   }
 
   return (
@@ -325,6 +371,15 @@ export default function Generator() {
           <strong>{photo ? "Photo locked in - swap anytime" : "Upload photo"}</strong>
           <span className="upload-hint">JPG · PNG · WEBP · HEIC</span>
         </label>
+
+        {photo ? (
+          <PhotoAdjuster
+            photo={photo}
+            shape={format === "id" ? "circle" : "square"}
+            value={crop}
+            onChange={setCrop}
+          />
+        ) : null}
 
         {format === "id" ? (
           <div className="fields">
@@ -421,9 +476,8 @@ export default function Generator() {
             <span className="reset-icon">＋</span> Create Another Frame
           </button>
         ) : null}
-        {/* B10: Updated share note to reflect actual behaviour */}
         <p className="share-note">
-          X opens instantly with a pre-filled caption. Your PNG downloads automatically - attach it to the post.
+          Share to X attaches your graphic on mobile, or opens a pre-filled post with a preview link to your exact frame — including #FrameInGoa.
         </p>
       </div>
     </section>

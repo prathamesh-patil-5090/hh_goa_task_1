@@ -23,8 +23,17 @@ body {
   min-height: 100vh;
   color: var(--offwhite);
   background:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(254, 225, 1, 0.28), transparent 55%),
-    linear-gradient(165deg, var(--primary-dark) 0%, var(--primary) 48%, #0a5c34 100%);
+    radial-gradient(
+      ellipse 80% 50% at 50% -10%,
+      rgba(254, 225, 1, 0.28),
+      transparent 55%
+    ),
+    linear-gradient(
+      165deg,
+      var(--primary-dark) 0%,
+      var(--primary) 48%,
+      #0a5c34 100%
+    );
   font-family: "Victor Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   -webkit-font-smoothing: antialiased;
 }
@@ -199,7 +208,9 @@ a {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   text-decoration: none;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .pill:hover {
@@ -290,9 +301,14 @@ a {
   border-radius: 1rem;
   padding: 1.5rem 1rem;
   cursor: pointer;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent) 18%, transparent), transparent);
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 18%, transparent),
+    transparent
+  );
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .upload:hover {
@@ -322,6 +338,120 @@ a {
 .upload-hint {
   font-size: 0.75rem;
   opacity: 0.7;
+}
+
+.cropper {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.85rem;
+  border-radius: 0.95rem;
+  background: color-mix(in srgb, var(--primary) 8%, white);
+  border: 1.5px solid color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.cropper-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.cropper-head span {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.cropper-reset {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--pink);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0.25rem 0.35rem;
+}
+
+.cropper-stage {
+  position: relative;
+  width: min(100%, 260px);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  overflow: hidden;
+  background: #0a0a0a;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  box-shadow: inset 0 0 0 3px var(--accent);
+}
+
+.cropper-stage:active {
+  cursor: grabbing;
+}
+
+.cropper-stage.circle {
+  border-radius: 999px;
+  box-shadow:
+    inset 0 0 0 3px var(--accent),
+    0 0 0 5px color-mix(in srgb, var(--pink) 55%, transparent);
+}
+
+.cropper-stage.square {
+  border-radius: 1rem;
+}
+
+.cropper-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+.cropper-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 10%;
+  transform: translateX(-50%);
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(11, 104, 57, 0.88);
+  color: var(--accent);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.cropper-zoom {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.cropper-zoom span,
+.cropper-zoom em {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--primary);
+  font-style: normal;
+}
+
+.cropper-zoom input[type="range"] {
+  width: 100%;
+  accent-color: var(--pink);
+  cursor: pointer;
 }
 
 .fields {
@@ -476,7 +606,9 @@ a {
   text-align: center;
   text-decoration: none;
   cursor: pointer;
-  transition: transform 0.15s ease, opacity 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
 }
 
 .btn:hover:not(:disabled) {
