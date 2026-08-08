@@ -1,4 +1,4 @@
-# 🌴 Hacker House Goa 2026 — Builder ID & PFP Frame Generator
+# 🌴 Hacker House Goa 2026 - Builder ID & PFP Frame Generator
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-hhgoa--id.netlify.app-0B6839?style=for-the-badge&logo=netlify)](https://hhgoa-id.netlify.app)
 [![Next.js](https://img.shields.io/badge/Next.js-15.5-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
