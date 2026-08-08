@@ -203,10 +203,6 @@ export default function Generator() {
                 teamCode: debouncedTeamCode,
                 builderTitle,
                 crop: debouncedCrop,
-                qrUrl:
-                  typeof window !== "undefined"
-                    ? window.location.origin
-                    : "https://hhgoa.com",
               });
         if (cancelled) return;
         if (latestUrl.current) URL.revokeObjectURL(latestUrl.current);
