@@ -1,60 +1,109 @@
-# HH Goa 2026 · Frame / ID Card Generator
+# 🌴 Hacker House Goa 2026 — Builder ID & PFP Frame Generator
 
-Live tool for [Hacker House Goa 2026](https://hhgoa.com/) shortlisting Task #1.
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-hhgoa--id.netlify.app-0B6839?style=for-the-badge&logo=netlify)](https://hhgoa-id.netlify.app)
+[![Next.js](https://img.shields.io/badge/Next.js-15.5-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.2-61DAFB?style=for-the-badge&logo=react)](https://react.js.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
-**Live Demo:** [https://hhgoa-id.netlify.app](https://hhgoa-id.netlify.app)
+An official interactive web app built for [Hacker House Goa 2026](https://hhgoa.com/) shortlisting Task #1. Upload any photo, customize your details, and instantly generate high-resolution, pixel-perfect **Builder ID Cards** and **PFP Frames**.
 
-Upload a photo → get a branded **Builder ID** or **PFP frame** in seconds → download PNG → **Share to X** with a pre-filled caption including `#FrameInGoa` and an OG preview of your exact graphic.
+---
 
-## Features
+## ✨ Features
 
-- **Format A — PFP Frame**: square overlay ready for an X profile picture
-- **Format B — Builder ID**: name, stack/role, generated builder class
-- HEIC/HEIF (iPhone), JPG, PNG, WEBP
-- Cover-crop handles portrait, landscape, and off-center photos
-- No login / signup wall
-- Share page with Open Graph + Twitter card image = your generated PNG
+- 🎴 **Dual Output Formats**:
+  - **Builder ID Card**: Branded ID card with name, role/stack, team info, assigned builder class, and official event details.
+  - **PFP Frame**: Square profile frame ready for X (Twitter) profile pictures.
+- 📸 **Mobile-First Photo Pipeline**:
+  - Auto-converts Apple **HEIC/HEIF** camera roll photos natively in-browser via `heic2any`.
+  - Normalizes EXIF image orientation (iOS Safari & Android).
+  - Client-side downscaling & memory management for zero canvas lag on mobile devices.
+- 🎨 **Official Brand Design System**:
+  - Official typography pairing: **Imbue** (Display serif) + **Victor Mono** (Monospace).
+  - Brand color palette: Deep Goa Green (`#0B6839`), Sunrise Yellow (`#FEE101`), Vibrant Pink (`#FF0080`), Off-White (`#FFFBE8`).
+  - Custom `HACKER [गोवा] HOUSE` branding header with solid Hindi calligraphy.
+- ⚡ **Seamless X (Twitter) Sharing**:
+  - **Direct Intent**: One-click **"Share to X"** opens `x.com/intent/post` directly with a pre-filled caption including `#FrameInGoa` and official hashtags.
+  - **Auto Download**: Automatically downloads the generated PNG graphic so builders can attach it to their post.
+- 🛠️ **Developer Experience & Utility Scripts**:
+  - Automatic Port Cleanup: Pre-dev hook (`scripts/kill-port.js`) frees port `3000` automatically before starting Next.js.
+  - Custom `ctx.roundRect` polyfills for older browser engines.
 
-## Quick start
+---
+
+## 🛠️ Tech Stack
+
+| Component | Technology |
+| :--- | :--- |
+| **Framework** | Next.js 15 (App Router) & React 19 |
+| **Styling** | Custom Design Tokens & Vanilla CSS System |
+| **Animations** | GSAP 3 (GreenSock) |
+| **Graphics Engine** | HTML5 2D Canvas API + Custom Asset Cache |
+| **Photo Conversion** | `heic2any` (iPhone HEIC to JPEG) |
+| **Storage / Blobs** | `@netlify/blobs` + Node.js `/tmp` Fallback |
+| **Language** | TypeScript (Strict Mode) |
+
+---
+
+## 🚀 Quick Start
+
+### 1. Clone & Install
 
 ```bash
+# Clone the repository
+git clone https://github.com/prathamesh-patil-5090/hh_goa_task_1.git
+cd hh_goa_task_1
+
+# Install dependencies
 npm install
 npm install gsap
+```
+
+### 2. Environment Configuration
+
+Copy the sample environment file:
+
+```bash
 cp .env.example .env.local
+```
+
+### 3. Run Development Server
+
+```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+> **Note**: Running `npm run dev` automatically executes `predev` (`scripts/kill-port.js`), clearing port `3000` if occupied, and launches Next.js cleanly on **`http://localhost:3000`**.
 
-Set `NEXT_PUBLIC_SITE_URL` to your public URL before sharing (needed for correct OG / tweet links).
+---
 
-## Deploy
+## 🌐 Deployment
 
-Works on any Node host (Vercel, Railway, Render, Fly).
+### Netlify Deployment
 
-1. Push this repo
-2. Set `NEXT_PUBLIC_SITE_URL` to the production origin (e.g. `https://your-app.vercel.app`)
-3. Deploy
+This repository is optimized out-of-the-box for **Netlify** with `@netlify/blobs` integration:
 
-> On Vercel, share images are stored under `/tmp` (ephemeral). For durable shares on serverless, point storage at a blob store or deploy on a host with persistent disk. Local / long-running Node keeps files in `data/shares/`.
+1. Push your repository to GitHub.
+2. Link the repository on Netlify.
+3. Set the environment variable:
+   ```env
+   NEXT_PUBLIC_SITE_URL=https://hhgoa-id.netlify.app
+   ```
+4. Deploy!
 
-## Share flow
+---
 
-1. Generate graphic in the browser (canvas)
-2. **Share to X** uploads the PNG to `POST /api/share`
-3. Opens X intent with caption + `/s/{id}`
-4. `/s/{id}` serves OG/Twitter meta whose `og:image` is `/api/share/{id}`
+## 📋 Task Submission Checklist
 
-## Stack
+- [x] **Live Demo**: [hhgoa-id.netlify.app](https://hhgoa-id.netlify.app)
+- [x] **Repository**: [GitHub Repo](https://github.com/prathamesh-patil-5090/hh_goa_task_1)
+- [ ] **X Post**: Post your generated card on X with `#FrameInGoa`
+- [ ] **Submission Form**: [Google Form Link](https://forms.gle/jM5hTaGvsrfEfixPA)
+- ⏰ **Deadline**: **11:59 PM, 13 August 2026**
 
-- Next.js 15 (App Router)
-- Canvas generation client-side
-- Imbue + Victor Mono (official HH Goa type pairing)
-- Brand colors from [hhgoa.com](https://hhgoa.com/): green `#0B6839`, yellow `#FEE101`, pink `#FF0080`
+---
 
-## Submit checklist
-
-- [x] Live link: [hhgoa-id.netlify.app](hhgoa-id.netlify.app)
-- [ ] Post on X with `#FrameInGoa`
-- [ ] Form: https://forms.gle/jM5hTaGvsrfEfixPA
-- Deadline: **11:59 pm, 13 August 2026**
+<p center="align">
+  Built with ❤️ for <b>Hacker House Goa 2026</b> by <b>2:47 PM STUDIO</b>.
+</p>
