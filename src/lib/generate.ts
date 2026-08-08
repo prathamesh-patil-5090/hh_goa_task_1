@@ -11,6 +11,8 @@ import {
   waitForFonts,
   wrapText,
 } from "./canvas";
+
+
 export type IdCardInput = {
   photo: CanvasImageSource;
   name: string;
@@ -19,6 +21,8 @@ export type IdCardInput = {
   teamCode?: string;
   builderTitle?: string;
   crop?: CropAdjust;
+  /** URL encoded into the on-card QR (tool / event link). */
+  qrUrl?: string;
 };
 
 const W = 1080;

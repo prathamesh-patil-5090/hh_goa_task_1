@@ -13,21 +13,14 @@ type Format = "id" | "pfp";
 export default function Generator() {
   const [format, setFormat] = useState<Format>("id");
 
-  // Live state (bound to inputs)
+  // Live state (bound to inputs for real-time syncing)
   const [name, setName] = useState("");
   const [stack, setStack] = useState("");
   const [teamName, setTeamName] = useState("");
   const [teamCode, setTeamCode] = useState("");
 
-  // B8: Debounced state — canvas only re-renders 300ms after the user stops typing
-  const [debouncedName, setDebouncedName] = useState("");
-  const [debouncedStack, setDebouncedStack] = useState("");
-  const [debouncedTeamName, setDebouncedTeamName] = useState("");
-  const [debouncedTeamCode, setDebouncedTeamCode] = useState("");
-
   const [photo, setPhoto] = useState<HTMLImageElement | null>(null);
   const [crop, setCrop] = useState<CropAdjust>(DEFAULT_CROP);
-  const [debouncedCrop, setDebouncedCrop] = useState<CropAdjust>(DEFAULT_CROP);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [blob, setBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -38,39 +31,26 @@ export default function Generator() {
   const fileRef = useRef<HTMLInputElement>(null);
   const latestUrl = useRef<string | null>(null);
 
+  // Track initial load / format change to only play subtle fade on fresh photo/format, never on typing
+  const isInitialLoadRef = useRef<boolean>(true);
+  const lastPhotoRef = useRef<HTMLImageElement | null>(null);
+  const lastFormatRef = useRef<Format>(format);
+
   const toggleRef = useRef<HTMLDivElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
   const idBtnRef = useRef<HTMLButtonElement>(null);
   const pfpBtnRef = useRef<HTMLButtonElement>(null);
-  const previewFrameRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const emptyRef = useRef<HTMLDivElement>(null);
   const downloadBtnRef = useRef<HTMLButtonElement>(null);
   const shareBtnRef = useRef<HTMLButtonElement>(null);
 
-  // B8: 300ms debounce for text fields
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedName(name);
-      setDebouncedStack(stack);
-      setDebouncedTeamName(teamName);
-      setDebouncedTeamCode(teamCode);
-    }, 300);
-    return () => clearTimeout(handler);
-  }, [name, stack, teamName, teamCode]);
-
-  // Faster debounce for crop so dragging still feels live without thrashing
-  useEffect(() => {
-    const handler = setTimeout(() => setDebouncedCrop(crop), 80);
-    return () => clearTimeout(handler);
-  }, [crop]);
-
   const builderTitle = useMemo(
     () =>
       generateBuilderTitle(
-        `${debouncedName}|${debouncedStack}|${debouncedTeamName}|${debouncedTeamCode}|${format}`,
+        `${name}|${stack}|${teamName}|${teamCode}|${format}`,
       ),
-    [debouncedName, debouncedStack, debouncedTeamName, debouncedTeamCode, format],
+    [name, stack, teamName, teamCode, format],
   );
 
   // Auto-dismiss toast after 4s
@@ -80,7 +60,14 @@ export default function Generator() {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  // GSAP smooth sliding indicator & frame transition
+  // Mark initial load on photo upload or format switch
+  if (lastPhotoRef.current !== photo || lastFormatRef.current !== format) {
+    lastPhotoRef.current = photo;
+    lastFormatRef.current = format;
+    isInitialLoadRef.current = true;
+  }
+
+  // GSAP minimal & clean format tab indicator animation
   useEffect(() => {
     const updateIndicator = () => {
       const activeBtn = format === "id" ? idBtnRef.current : pfpBtnRef.current;
@@ -88,70 +75,40 @@ export default function Generator() {
       gsap.to(indicatorRef.current, {
         x: activeBtn.offsetLeft,
         width: activeBtn.offsetWidth,
-        duration: 0.38,
-        ease: "power3.out",
+        duration: 0.25,
+        ease: "power2.out",
       });
     };
 
     updateIndicator();
     window.addEventListener("resize", updateIndicator);
-
-    const activeBtn = format === "id" ? idBtnRef.current : pfpBtnRef.current;
-    if (activeBtn) {
-      gsap.fromTo(activeBtn, { scale: 0.93 }, { scale: 1, duration: 0.35, ease: "back.out(2)" });
-    }
-    if (previewFrameRef.current) {
-      gsap.fromTo(
-        previewFrameRef.current,
-        { scale: 0.97, opacity: 0.85 },
-        { scale: 1, opacity: 1, duration: 0.4, ease: "power2.out" },
-      );
-    }
-
     return () => window.removeEventListener("resize", updateIndicator);
   }, [format]);
 
-  // GSAP animation when preview image changes
+  // Minimal fade-in only when photo/format changes for the first time
   useEffect(() => {
     if (previewUrl && imgRef.current) {
-      gsap.fromTo(
-        imgRef.current,
-        { scale: 1.08, opacity: 0, filter: "blur(10px)" },
-        { scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.55, ease: "power3.out" },
-      );
+      if (isInitialLoadRef.current) {
+        gsap.fromTo(
+          imgRef.current,
+          { opacity: 0 },
+          { opacity: 1, duration: 0.25, ease: "power2.out" },
+        );
+        isInitialLoadRef.current = false;
+      }
     }
   }, [previewUrl]);
 
-  // GSAP animation for empty state
+  // GSAP minimal animation for empty state
   useEffect(() => {
     if (!previewUrl && emptyRef.current) {
       gsap.fromTo(
         emptyRef.current,
-        { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" },
+        { opacity: 0 },
+        { opacity: 1, duration: 0.25, ease: "power2.out" },
       );
     }
   }, [previewUrl, format]);
-
-  // GSAP spring animation when buttons become active
-  useEffect(() => {
-    if (blob) {
-      if (downloadBtnRef.current) {
-        gsap.fromTo(
-          downloadBtnRef.current,
-          { scale: 0.9, opacity: 0.6 },
-          { scale: 1, opacity: 1, duration: 0.4, ease: "back.out(1.8)" },
-        );
-      }
-      if (shareBtnRef.current) {
-        gsap.fromTo(
-          shareBtnRef.current,
-          { scale: 0.9, opacity: 0.6 },
-          { scale: 1, opacity: 1, duration: 0.4, delay: 0.07, ease: "back.out(1.8)" },
-        );
-      }
-    }
-  }, [blob]);
 
   // Cleanup object URL on unmount
   useEffect(() => {
@@ -169,7 +126,6 @@ export default function Generator() {
       const normalized = await normalizePhotoFile(file);
       const img = await blobToImage(normalized);
       setCrop(DEFAULT_CROP);
-      setDebouncedCrop(DEFAULT_CROP);
       setPhoto(img);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not read photo");
@@ -179,7 +135,7 @@ export default function Generator() {
     }
   }
 
-  // B7: Removed startTransition wrapper — it must be synchronous but we need async
+  // Real-time canvas generation & pre-decoded live syncing
   useEffect(() => {
     if (!photo) {
       setPreviewUrl(null);
@@ -189,31 +145,59 @@ export default function Generator() {
 
     let cancelled = false;
     void (async () => {
-      setBusy(true);
       setError(null);
       try {
         const out =
           format === "pfp"
-            ? await generatePfpFrame(photo, debouncedCrop)
+            ? await generatePfpFrame(photo, crop)
             : await generateIdCard({
                 photo,
-                name: debouncedName,
-                stack: debouncedStack,
-                teamName: debouncedTeamName,
-                teamCode: debouncedTeamCode,
+                name,
+                stack,
+                teamName,
+                teamCode,
                 builderTitle,
-                crop: debouncedCrop,
+                crop,
+                qrUrl:
+                  typeof window !== "undefined"
+                    ? window.location.origin
+                    : "https://hhgoa.com",
               });
+
         if (cancelled) return;
-        if (latestUrl.current) URL.revokeObjectURL(latestUrl.current);
+
         const url = URL.createObjectURL(out);
-        latestUrl.current = url;
-        setBlob(out);
-        setPreviewUrl(url);
+
+        // Pre-decode image before swapping state to guarantee flicker-free live sync
+        const tempImg = new Image();
+        tempImg.onload = () => {
+          if (cancelled) {
+            URL.revokeObjectURL(url);
+            return;
+          }
+          if (latestUrl.current) URL.revokeObjectURL(latestUrl.current);
+          latestUrl.current = url;
+          setBlob(out);
+          setPreviewUrl(url);
+          setBusy(false);
+        };
+        tempImg.onerror = () => {
+          if (cancelled) {
+            URL.revokeObjectURL(url);
+            return;
+          }
+          if (latestUrl.current) URL.revokeObjectURL(latestUrl.current);
+          latestUrl.current = url;
+          setBlob(out);
+          setPreviewUrl(url);
+          setBusy(false);
+        };
+        tempImg.src = url;
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Generation failed");
-      } finally {
-        if (!cancelled) setBusy(false);
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : "Generation failed");
+          setBusy(false);
+        }
       }
     })();
 
@@ -223,12 +207,12 @@ export default function Generator() {
   }, [
     photo,
     format,
-    debouncedName,
-    debouncedStack,
-    debouncedTeamName,
-    debouncedTeamCode,
+    name,
+    stack,
+    teamName,
+    teamCode,
     builderTitle,
-    debouncedCrop,
+    crop,
   ]);
 
   function download() {
@@ -238,14 +222,13 @@ export default function Generator() {
     a.download =
       format === "pfp"
         ? `hh-goa-2026-pfp.png`
-        : `hh-goa-2026-id-${(debouncedName || "builder").toLowerCase().replace(/\s+/g, "-")}.png`;
+        : `hh-goa-2026-id-${(name || "builder").toLowerCase().replace(/\s+/g, "-")}.png`;
     a.click();
   }
 
   function resetForm() {
     setPhoto(null);
     setCrop(DEFAULT_CROP);
-    setDebouncedCrop(DEFAULT_CROP);
     setName("");
     setStack("");
     setTeamName("");
@@ -264,7 +247,7 @@ export default function Generator() {
     setToast(null);
 
     const fullCaption = shareCaption(
-      debouncedName || undefined,
+      name || undefined,
       format === "id" ? builderTitle : undefined,
     );
 
@@ -280,7 +263,7 @@ export default function Generator() {
       const form = new FormData();
       form.append("image", blob, "frame.png");
       form.append("format", format);
-      form.append("name", debouncedName);
+      form.append("name", name);
       form.append("title", format === "id" ? builderTitle : "PFP Frame");
       await fetch("/api/share", { method: "POST", body: form });
     } catch {
@@ -397,7 +380,7 @@ export default function Generator() {
         {toast ? <div className="toast">{toast}</div> : null}
       </div>
 
-      <div className="preview-panel" ref={previewFrameRef}>
+      <div className="preview-panel">
         <div className={`preview-frame ${format}`}>
           {previewUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
