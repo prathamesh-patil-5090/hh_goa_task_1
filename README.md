@@ -23,12 +23,13 @@ An official interactive web app built for [Hacker House Goa 2026](https://hhgoa.
   - Official typography pairing: **Imbue** (Display serif) + **Victor Mono** (Monospace).
   - Brand color palette: Deep Goa Green (`#0B6839`), Sunrise Yellow (`#FEE101`), Vibrant Pink (`#FF0080`), Off-White (`#FFFBE8`).
   - Custom `HACKER [गोवा] HOUSE` branding header with solid Hindi calligraphy.
-- ⚡ **Seamless X (Twitter) Sharing**:
-  - **Direct Intent**: One-click **"Share to X"** opens `x.com/intent/post` directly with a pre-filled caption including `#FrameInGoa` and official hashtags.
-  - **Auto Download**: Automatically downloads the generated PNG graphic so builders can attach it to their post.
-- 🛠️ **Developer Experience & Utility Scripts**:
-  - Automatic Port Cleanup: Pre-dev hook (`scripts/kill-port.js`) frees port `3000` automatically before starting Next.js.
-  - Custom `ctx.roundRect` polyfills for older browser engines.
+- ⚡ **Multi-Platform 1-Click Sharing (X & LinkedIn)**:
+  - **X (Twitter)**: Opens `x.com/intent/post` directly with a pre-filled caption including `#FrameInGoa` and official live link.
+  - **LinkedIn**: One-click sharing with dedicated multi-line caption formatting, live URL, and hashtags (`#FrameInGoa #HackerHouseGoa #BuildInPublic`).
+- 🚀 **GSAP Animations & Compulsory Validation**:
+  - Silky GSAP spring hover physics (`back.out(2)`) on social icons and action pills.
+  - Compulsory field validation for Image, Name, Role/Stack, Team Name, and Team Code.
+  - Responsive GSAP popup toast (Docked at **Top Center on Mobile** & **Bottom Right on Laptop/PC**) with 5-second auto-dismiss.
 
 ---
 
@@ -98,8 +99,8 @@ This repository is optimized out-of-the-box for **Netlify** with `@netlify/blobs
 
 - [x] **Live Demo**: [hhgoa-id.netlify.app](https://hhgoa-id.netlify.app)
 - [x] **Repository**: [GitHub Repo](https://github.com/prathamesh-patil-5090/hh_goa_task_1)
-- [ ] **X Post**: Post your generated card on X with `#FrameInGoa`
-- [ ] **Submission Form**: [Google Form Link](https://forms.gle/jM5hTaGvsrfEfixPA)
+- [x] **X Post**: [View Announcement Post on X](https://x.com/aniketprsad/status/2086161950757769642?s=20)
+- [x] **Submission Form**: Submitted! ([Google Form](https://forms.gle/jM5hTaGvsrfEfixPA))
 - ⏰ **Deadline**: **11:59 PM, 13 August 2026**
 
 ---
