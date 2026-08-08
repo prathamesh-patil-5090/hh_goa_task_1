@@ -408,7 +408,7 @@ export default function Generator() {
                 <input
                   value={teamName}
                   onChange={(e) => setTeamName(e.target.value)}
-                  placeholder="e.g. WaveHackers"
+                  placeholder="e.g. Probix"
                   maxLength={36}
                 />
               </label>

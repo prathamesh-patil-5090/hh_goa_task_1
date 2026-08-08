@@ -12,10 +12,9 @@ import {
   wrapText,
 } from "./canvas";
 import {
-  drawFlower,
+  drawBarcode,
   drawHalfSun,
   drawPalm,
-  drawSandDots,
   drawWaves,
 } from "./goa-decor";
 import { makeQrImage } from "./qr";
@@ -68,7 +67,7 @@ export async function generateIdCard(input: IdCardInput): Promise<Blob> {
     // optional decorative layer
   }
 
-  // Soft yellow glow + rising sun watermark behind card
+  // Soft yellow glow
   const glow = ctx.createRadialGradient(
     W * 0.5,
     H * 0.18,
@@ -81,7 +80,6 @@ export async function generateIdCard(input: IdCardInput): Promise<Blob> {
   glow.addColorStop(1, "rgba(254,225,1,0)");
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, W, H);
-  drawHalfSun(ctx, W / 2, H - 40, 120, "rgba(254,225,1,0.18)");
 
   // Card body
   const pad = 56;
@@ -103,39 +101,12 @@ export async function generateIdCard(input: IdCardInput): Promise<Blob> {
     ctx.beginPath();
     ctx.roundRect(cardX, cardY, cardW, cardH, 28);
     ctx.clip();
-    ctx.globalAlpha = 0.18;
+    ctx.globalAlpha = 0.12;
     drawCover(ctx, beachBg, cardX, cardY, cardW, cardH);
     ctx.restore();
   } catch {
     // optional decorative layer
   }
-
-  // Drawn Goa motifs inside the card (clipped)
-  ctx.save();
-  ctx.beginPath();
-  ctx.roundRect(cardX, cardY, cardW, cardH, 28);
-  ctx.clip();
-  drawPalm(
-    ctx,
-    cardX + 70,
-    cardY + cardH - 36,
-    1.15,
-    false,
-    "rgba(11,104,57,0.14)",
-  );
-  drawPalm(
-    ctx,
-    cardX + cardW - 70,
-    cardY + cardH - 36,
-    1.15,
-    true,
-    "rgba(11,104,57,0.14)",
-  );
-  drawHalfSun(ctx, W / 2, cardY + 210, 56, "rgba(254,225,1,0.28)");
-  drawSandDots(ctx, cardX + 24, cardY + 160, cardW - 48, cardH - 280, 55);
-  drawFlower(ctx, cardX + 58, cardY + 210, 16, "rgba(255,0,128,0.35)");
-  drawFlower(ctx, cardX + cardW - 58, cardY + 210, 16, "rgba(255,0,128,0.35)");
-  ctx.restore();
 
   // Top brand strip — matching HACKER HOUSE + Goa Hindi calligraphy (solid yellow) + sun icon
   const stripH = 132;
@@ -239,97 +210,73 @@ export async function generateIdCard(input: IdCardInput): Promise<Blob> {
   ctx.font = `700 26px ${mono}`;
   ctx.fillText(stack, W / 2, textY + 12);
 
-  // Team Name & Team Code
+  // Team Name & Team Code Barcode
   const tName = (input.teamName || "").trim().toUpperCase();
   const tCode = (input.teamCode || "").trim().toUpperCase();
-  const teamText = [
-    tName ? `TEAM: ${tName}` : null,
-    tCode ? `CODE: ${tCode}` : null,
-  ]
-    .filter(Boolean)
-    .join("   ·   ");
 
   let teamOffsetY = 0;
-  if (teamText) {
+  if (tName) {
     ctx.fillStyle = BRAND.primary;
-    ctx.font = `800 20px ${mono}`;
+    ctx.font = `800 22px ${mono}`;
     ctx.textAlign = "center";
-    ctx.fillText(teamText, W / 2, textY + 48);
+    ctx.fillText(`TEAM: ${tName}`, W / 2, textY + 48);
     teamOffsetY = 38;
   }
 
-  // QR + builder class badge (side by side)
-  const qrSize = 112;
-  const qrPad = 8;
-  const qrBox = qrSize + qrPad * 2;
-  const gap = 18;
+  // Assigned builder class badge (full width)
   const badgeY = textY + 52 + teamOffsetY;
+  const badgeW = cardW - 80;
   const badgeX = cardX + 40;
-  const badgeW = cardW - 80 - qrBox - gap;
-  const qrX = badgeX + badgeW + gap;
-  const qrUrl =
-    input.qrUrl ||
-    (typeof window !== "undefined"
-      ? window.location.origin
-      : "https://hhgoa.com");
-
   ctx.font = `700 42px ${display}`;
-  const titleLines = wrapText(ctx, title.toUpperCase(), badgeW - 56).slice(
+  const titleLines = wrapText(ctx, title.toUpperCase(), badgeW - 72).slice(
     0,
     2,
   );
-  const badgeH = Math.max(qrBox, titleLines.length > 1 ? 148 : 120);
+  const badgeH = titleLines.length > 1 ? 148 : 120;
   fillRoundRect(ctx, badgeX, badgeY, badgeW, badgeH, 18, BRAND.primary);
 
   ctx.fillStyle = BRAND.accent;
-  ctx.font = `800 16px ${mono}`;
+  ctx.font = `800 18px ${mono}`;
   ctx.textAlign = "left";
-  ctx.fillText("ASSIGNED BUILDER CLASS", badgeX + 28, badgeY + 38);
+  ctx.fillText("ASSIGNED BUILDER CLASS", badgeX + 36, badgeY + 40);
 
   ctx.fillStyle = BRAND.white;
-  ctx.font = `700 36px ${display}`;
-  let ty = badgeY + 78;
+  ctx.font = `700 42px ${display}`;
+  let ty = badgeY + 82;
   for (const line of titleLines) {
-    ctx.fillText(line, badgeX + 28, ty);
-    ty += 36;
+    ctx.fillText(line, badgeX + 36, ty);
+    ty += 40;
   }
 
-  try {
-    const qrImg = await makeQrImage(qrUrl, qrSize * 2);
-    const qrY = badgeY + (badgeH - qrBox) / 2;
-    fillRoundRect(ctx, qrX, qrY, qrBox, qrBox, 14, BRAND.white);
-    ctx.drawImage(qrImg, qrX + qrPad, qrY + qrPad, qrSize, qrSize);
-    ctx.strokeStyle = BRAND.pink;
-    ctx.lineWidth = 3;
-    ctx.strokeRect(qrX + 1.5, qrY + 1.5, qrBox - 3, qrBox - 3);
-
-    ctx.fillStyle = BRAND.pink;
-    ctx.font = `800 12px ${mono}`;
-    ctx.textAlign = "center";
-    ctx.fillText("SCAN", qrX + qrBox / 2, qrY + qrBox + 18);
-  } catch {
-    // QR optional — don't fail the whole card
+  // Team Code Barcode
+  if (tCode) {
+    const barY = badgeY + badgeH + 20;
+    drawBarcode(ctx, W / 2, barY, 260, 48, tCode, BRAND.primary, mono);
   }
 
-  // Footer sits snug under badge (no large empty cream band)
-  const footY = Math.min(cardY + cardH - 48, badgeY + badgeH + 78);
+  // Footer meta
+  const footY = cardY + cardH - 52;
   ctx.fillStyle = BRAND.primary;
   ctx.font = `700 20px ${mono}`;
   ctx.textAlign = "left";
   ctx.fillText(EVENT.place, cardX + 40, footY);
+
+  ctx.fillStyle = BRAND.pink;
+  ctx.font = `800 20px ${mono}`;
+  ctx.textAlign = "center";
+  ctx.fillText(EVENT.hashtag, W / 2, footY);
 
   ctx.fillStyle = BRAND.primary;
   ctx.font = `700 20px ${mono}`;
   ctx.textAlign = "right";
   ctx.fillText(EVENT.dates, cardX + cardW - 40, footY);
 
-  // Wave band + pink rule above footer
-  drawWaves(ctx, cardX + 40, footY - 48, cardW - 80, BRAND.pink, 8);
+  // Pink underline rule
   ctx.strokeStyle = BRAND.pink;
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.moveTo(cardX + 40, footY - 24);
-  ctx.lineTo(cardX + cardW - 40, footY - 24);
+  ctx.moveTo(cardX + 40, footY - 28);
+  ctx.lineTo(cardX + cardW - 40, footY - 28);
   ctx.stroke();
 
   // Outer hashtag and studio strip
@@ -500,8 +447,6 @@ export async function generatePfpFrame(
 
   // Tiny Goa accents on the outer yellow band
   drawHalfSun(ctx, inset - 8, inset + 8, 22, BRAND.accent);
-  drawFlower(ctx, size - inset + 8, inset + 28, 12, BRAND.pink);
-  drawFlower(ctx, inset - 8, size - inset - 28, 12, BRAND.pink);
 
   return canvasToBlob(canvas, "image/png");
 }

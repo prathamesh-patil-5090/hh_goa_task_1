@@ -4,7 +4,8 @@
   "private": true,
   "description": "HH Goa 2026 Frame / ID Card Generator",
   "scripts": {
-    "dev": "next dev",
+    "predev": "node scripts/kill-port.js",
+    "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
