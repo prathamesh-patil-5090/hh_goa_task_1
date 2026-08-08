@@ -19,6 +19,7 @@ Upload a photo → get a branded **Builder ID** or **PFP frame** in seconds → 
 
 ```bash
 npm install
+npm install gsap
 cp .env.example .env.local
 npm run dev
 ```

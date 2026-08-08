@@ -12,7 +12,7 @@ const imbue = Imbue({
 export const metadata: Metadata = {
   title: "HH Goa 2026 · Frame / ID Generator",
   description:
-    "Upload a photo and get a branded Hacker House Goa 2026 builder ID or PFP frame - download and share with #FrameInGoa.",
+    "Generate your official Hacker House Goa 2026 Builder ID & PFP Frame in seconds. Lock in your custom builder class, download your graphic, and share directly to X with #FrameInGoa.",
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL || "https://hhgoa-id.netlify.app",
   ),

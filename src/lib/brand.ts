@@ -56,7 +56,6 @@ export function generateBuilderTitle(seed: string): string {
 
 export function shareCaption(name?: string, title?: string): string {
   const who = name?.trim() ? name.trim() : "a builder";
-  const role = title?.trim() ? ` — ${title.trim()}` : "";
-  // Keep well under 280 chars (X counts links as ~23). Share URL is added separately.
-  return `HH Goa 2026 Builder Card as ${who}${role}.\n\nMake yours 👇\n#FrameInGoa`;
+  const role = title?.trim() ? ` (${title.trim()})` : "";
+  return `Ready to build, ship, and make waves at Hacker House Goa 2026! 🌴🚀\n\nJust generated my official Builder Card as ${who}${role}.\n\nCreate your official frame & lock in:\nhhgoa-id.netlify.app\n\n#FrameInGoa @247pmstudio #Hackathon #Hackerhousegoa`;
 }

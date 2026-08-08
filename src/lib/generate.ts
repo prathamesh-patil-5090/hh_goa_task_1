@@ -12,7 +12,6 @@ import {
   wrapText,
 } from "./canvas";
 import {
-  drawBarcode,
   drawHalfSun,
   drawPalm,
   drawWaves,
@@ -94,15 +93,34 @@ export async function generateIdCard(input: IdCardInput): Promise<Blob> {
   fillRoundRect(ctx, cardX, cardY, cardW, cardH, 28, BRAND.offwhite);
   ctx.restore();
 
-  // Beach trees background texture layer
+  // Beach trees background texture layer with rich contrast & warm sunrise glow
   try {
     const beachBg = await loadImage("/brand/card_beach_bg.png");
     ctx.save();
     ctx.beginPath();
     ctx.roundRect(cardX, cardY, cardW, cardH, 28);
     ctx.clip();
-    ctx.globalAlpha = 0.12;
+
+    // 1) Rich palm beach texture
+    ctx.globalAlpha = 0.28;
     drawCover(ctx, beachBg, cardX, cardY, cardW, cardH);
+    ctx.globalAlpha = 1;
+
+    // 2) Warm radial sunrise glow behind photo circle
+    const photoGlow = ctx.createRadialGradient(
+      W / 2,
+      cardY + 378,
+      20,
+      W / 2,
+      cardY + 378,
+      380,
+    );
+    photoGlow.addColorStop(0, "rgba(254, 225, 1, 0.42)");
+    photoGlow.addColorStop(0.55, "rgba(255, 0, 128, 0.10)");
+    photoGlow.addColorStop(1, "rgba(254, 225, 1, 0)");
+    ctx.fillStyle = photoGlow;
+    ctx.fillRect(cardX, cardY + 120, cardW, cardH - 120);
+
     ctx.restore();
   } catch {
     // optional decorative layer
@@ -117,30 +135,53 @@ export async function generateIdCard(input: IdCardInput): Promise<Blob> {
   ctx.fillStyle = BRAND.white;
   ctx.font = `700 52px ${display}`;
   ctx.textAlign = "left";
-  ctx.fillText("HACKER HOUSE", cardX + 40, cardY + 66);
+  ctx.fillText("HACKER", cardX + 40, cardY + 66);
 
-  const hhWidth = ctx.measureText("HACKER HOUSE").width;
+  const hackerW = ctx.measureText("HACKER").width;
+  let goaW = 72;
 
   try {
     const goaHindiImg = await loadImage("/brand/goa_hindi_solid.svg");
-    const goaH = 72;
-    const goaW = (goaHindiImg.width / goaHindiImg.height) * goaH || 72;
+    const goaH = 68;
+    goaW = (goaHindiImg.width / goaHindiImg.height) * goaH || 72;
     ctx.drawImage(
       goaHindiImg,
-      cardX + 40 + hhWidth + 16,
-      cardY + 2,
+      cardX + 40 + hackerW + 14,
+      cardY + 4,
       goaW,
       goaH,
     );
   } catch {
     ctx.fillStyle = BRAND.accent;
     ctx.font = `700 52px ${display}`;
-    ctx.fillText("गोवा", cardX + 40 + hhWidth + 16, cardY + 66);
+    ctx.fillText("गोवा", cardX + 40 + hackerW + 14, cardY + 66);
+    goaW = ctx.measureText("गोवा").width;
   }
+
+  const houseX = cardX + 40 + hackerW + 14 + goaW + 14;
+  ctx.fillStyle = BRAND.white;
+  ctx.font = `700 52px ${display}`;
+  ctx.fillText("HOUSE", houseX, cardY + 66);
+  const houseW = ctx.measureText("HOUSE").width;
+  const houseRightEdge = houseX + houseW;
 
   ctx.fillStyle = BRAND.accent;
   ctx.font = `800 20px ${mono}`;
-  ctx.fillText("OPEN TRIALS · OCT 28-31", cardX + 40, cardY + 104);
+
+  // Align OPEN TRIALS with 'H' (left edge)
+  ctx.textAlign = "left";
+  ctx.fillText("OPEN TRIALS", cardX + 40, cardY + 104);
+  const openTrialsW = ctx.measureText("OPEN TRIALS").width;
+
+  // Align OCT 28-31 with 'E' (right edge)
+  ctx.textAlign = "right";
+  ctx.fillText("OCT 28-31", houseRightEdge, cardY + 104);
+  const octW = ctx.measureText("OCT 28-31").width;
+
+  // Centered dot in the gap
+  const dotX = (cardX + 40 + openTrialsW + (houseRightEdge - octW)) / 2;
+  ctx.textAlign = "center";
+  ctx.fillText("·", dotX, cardY + 104);
 
   try {
     const studioImg = await loadImage("/brand/2-47.svg");
@@ -207,20 +248,26 @@ export async function generateIdCard(input: IdCardInput): Promise<Blob> {
   // Stack / role
   const stack = (input.stack || "FULL-STACK").toUpperCase();
   ctx.fillStyle = BRAND.pink;
-  ctx.font = `700 26px ${mono}`;
-  ctx.fillText(stack, W / 2, textY + 12);
+  ctx.font = `760 30px ${mono}`;
+  ctx.fillText(stack, W / 2, textY + 16);
 
-  // Team Name & Team Code Barcode
+  // Team Name & Team Code
   const tName = (input.teamName || "").trim().toUpperCase();
   const tCode = (input.teamCode || "").trim().toUpperCase();
+  const teamText = [
+    tName ? `TEAM: ${tName}` : null,
+    tCode ? `CODE: ${tCode}` : null,
+  ]
+    .filter(Boolean)
+    .join("   ·   ");
 
   let teamOffsetY = 0;
-  if (tName) {
+  if (teamText) {
     ctx.fillStyle = BRAND.primary;
-    ctx.font = `800 22px ${mono}`;
+    ctx.font = `760 24px ${mono}`;
     ctx.textAlign = "center";
-    ctx.fillText(`TEAM: ${tName}`, W / 2, textY + 48);
-    teamOffsetY = 38;
+    ctx.fillText(teamText, W / 2, textY + 58);
+    teamOffsetY = 46;
   }
 
   // Assigned builder class badge (full width)
@@ -248,26 +295,15 @@ export async function generateIdCard(input: IdCardInput): Promise<Blob> {
     ty += 40;
   }
 
-  // Team Code Barcode
-  if (tCode) {
-    const barY = badgeY + badgeH + 20;
-    drawBarcode(ctx, W / 2, barY, 260, 48, tCode, BRAND.primary, mono);
-  }
-
   // Footer meta
-  const footY = cardY + cardH - 52;
+  const footY = cardY + cardH - 50;
   ctx.fillStyle = BRAND.primary;
-  ctx.font = `700 20px ${mono}`;
+  ctx.font = `700 26px ${mono}`;
   ctx.textAlign = "left";
   ctx.fillText(EVENT.place, cardX + 40, footY);
 
-  ctx.fillStyle = BRAND.pink;
-  ctx.font = `800 20px ${mono}`;
-  ctx.textAlign = "center";
-  ctx.fillText(EVENT.hashtag, W / 2, footY);
-
   ctx.fillStyle = BRAND.primary;
-  ctx.font = `700 20px ${mono}`;
+  ctx.font = `700 26px ${mono}`;
   ctx.textAlign = "right";
   ctx.fillText(EVENT.dates, cardX + cardW - 40, footY);
 
@@ -279,11 +315,11 @@ export async function generateIdCard(input: IdCardInput): Promise<Blob> {
   ctx.lineTo(cardX + cardW - 40, footY - 28);
   ctx.stroke();
 
-  // Outer hashtag and studio strip
+  // Outer hashtag strip
   ctx.fillStyle = BRAND.accent;
-  ctx.font = `800 22px ${mono}`;
+  ctx.font = `800 30px ${mono}`;
   ctx.textAlign = "center";
-  ctx.fillText(`${EVENT.hashtag}  ·  ${EVENT.studio}`, W / 2, H - 28);
+  ctx.fillText(EVENT.hashtag, W / 2, H - 26);
 
   return canvasToBlob(canvas, "image/png");
 }
@@ -392,30 +428,41 @@ export async function generatePfpFrame(
   ctx.fillStyle = BRAND.white;
   ctx.textAlign = "left";
   ctx.font = `700 52px ${display}`;
-  ctx.fillText("HACKER HOUSE", inset + 40, bannerY + 68);
+  ctx.fillText("HACKER", inset + 40, bannerY + 68);
 
-  const hhPfpW = ctx.measureText("HACKER HOUSE").width;
+  const hackerPfpW = ctx.measureText("HACKER").width;
+  let goaPfpW = 72;
+
   try {
     const goaHindiImg = await loadImage("/brand/goa_hindi_solid.svg");
-    const goaH = 72;
-    const goaW = (goaHindiImg.width / goaHindiImg.height) * goaH || 72;
+    const goaH = 68;
+    goaPfpW = (goaHindiImg.width / goaHindiImg.height) * goaH || 72;
     ctx.drawImage(
       goaHindiImg,
-      inset + 40 + hhPfpW + 16,
-      bannerY + 4,
-      goaW,
+      inset + 40 + hackerPfpW + 14,
+      bannerY + 6,
+      goaPfpW,
       goaH,
     );
   } catch {
     ctx.fillStyle = BRAND.accent;
     ctx.font = `700 52px ${display}`;
-    ctx.fillText("गोवा", inset + 40 + hhPfpW + 16, bannerY + 68);
+    ctx.fillText("गोवा", inset + 40 + hackerPfpW + 14, bannerY + 68);
+    goaPfpW = ctx.measureText("गोवा").width;
   }
 
-  ctx.fillStyle = BRAND.accent;
-  ctx.font = `800 20px ${mono}`;
+  ctx.fillStyle = BRAND.white;
+  ctx.font = `700 52px ${display}`;
   ctx.fillText(
-    `OPEN TRIALS · OCT 28-31  ·  ${EVENT.hashtag}`,
+    "HOUSE",
+    inset + 40 + hackerPfpW + 14 + goaPfpW + 14,
+    bannerY + 68,
+  );
+
+  ctx.fillStyle = BRAND.accent;
+  ctx.font = `800 26px ${mono}`;
+  ctx.fillText(
+    "OPEN TRIALS · OCT 28-31",
     inset + 40,
     bannerY + 110,
   );
@@ -438,15 +485,12 @@ export async function generatePfpFrame(
     ctx.fillText("2:47 PM STUDIO", size - inset - 40, bannerY + 88);
   }
 
-  // Top mini label
+  // Top mini hashtag pill label
   fillRoundRect(ctx, size / 2 - 150, inset + 22, 300, 44, 22, BRAND.pink);
   ctx.fillStyle = BRAND.white;
-  ctx.font = `800 18px ${mono}`;
+  ctx.font = `800 22px ${mono}`;
   ctx.textAlign = "center";
-  ctx.fillText("OFFICIAL PFP FRAME", size / 2, inset + 50);
-
-  // Tiny Goa accents on the outer yellow band
-  drawHalfSun(ctx, inset - 8, inset + 8, 22, BRAND.accent);
+  ctx.fillText(EVENT.hashtag, size / 2, inset + 51);
 
   return canvasToBlob(canvas, "image/png");
 }

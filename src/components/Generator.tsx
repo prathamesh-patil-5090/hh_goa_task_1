@@ -271,65 +271,28 @@ export default function Generator() {
       debouncedName || undefined,
       format === "id" ? builderTitle : undefined,
     );
-    const file = new File([blob], "hh-goa-2026-frame.png", { type: "image/png" });
 
-    // 1) Mobile / supporting browsers: native share sheet with the PNG attached
-    try {
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          text: fullCaption,
-          title: "HH Goa 2026 Frame",
-        });
-        setToast("Shared with your graphic attached.");
-        setSharing(false);
-        return;
-      }
-    } catch (e) {
-      if (e instanceof DOMException && e.name === "AbortError") {
-        setSharing(false);
-        return;
-      }
-      // fall through to X intent + OG link
-    }
+    // 1) Open X intent immediately & synchronously (cannot be popup-blocked)
+    const intent = `https://x.com/intent/post?text=${encodeURIComponent(fullCaption)}`;
+    window.open(intent, "_blank", "noopener,noreferrer");
 
-    // 2) Open a tab synchronously (avoids popup blockers), then point it at X
-    //    with caption + share URL so the tweet card previews the graphic.
-    const popup = window.open("about:blank", "hhgoa_share");
+    // 2) Trigger PNG download so user can attach image
+    download();
 
+    // 3) Fire-and-forget background upload for share page metadata
     try {
       const form = new FormData();
       form.append("image", blob, "frame.png");
       form.append("format", format);
       form.append("name", debouncedName);
       form.append("title", format === "id" ? builderTitle : "PFP Frame");
-
-      const res = await fetch("/api/share", { method: "POST", body: form });
-      const data = (await res.json()) as {
-        shareUrl?: string;
-        error?: string;
-      };
-      if (!res.ok || !data.shareUrl) {
-        throw new Error(data.error || "Could not prepare share link");
-      }
-
-      const intent = `https://x.com/intent/post?text=${encodeURIComponent(fullCaption)}&url=${encodeURIComponent(data.shareUrl)}`;
-      if (popup && !popup.closed) {
-        popup.location.href = intent;
-      } else {
-        window.location.href = intent;
-      }
-      setToast("Opening X with your graphic preview linked.");
-    } catch (e) {
-      const fallback = `https://x.com/intent/post?text=${encodeURIComponent(fullCaption)}`;
-      if (popup && !popup.closed) popup.location.href = fallback;
-      else window.open(fallback, "_blank");
-      download();
-      setError(e instanceof Error ? e.message : "Share upload failed");
-      setToast("X opened — PNG downloaded so you can attach it.");
-    } finally {
-      setSharing(false);
+      await fetch("/api/share", { method: "POST", body: form });
+    } catch {
+      // metadata upload optional — doesn't block X
     }
+
+    setToast("Opening X! PNG downloaded — attach it to your post.");
+    setSharing(false);
   }
 
   return (
@@ -408,7 +371,7 @@ export default function Generator() {
                 <input
                   value={teamName}
                   onChange={(e) => setTeamName(e.target.value)}
-                  placeholder="e.g. Probix"
+                  placeholder="e.g. WaveHackers"
                   maxLength={36}
                 />
               </label>
