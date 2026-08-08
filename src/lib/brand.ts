@@ -57,5 +57,18 @@ export function generateBuilderTitle(seed: string): string {
 export function shareCaption(name?: string, title?: string): string {
   const who = name?.trim() ? name.trim() : "a builder";
   const role = title?.trim() ? ` (${title.trim()})` : "";
-  return `Ready to build, ship, and make waves at Hacker House Goa 2026! 🌴🚀\n\nJust generated my official Builder Card as ${who}${role}.\n\nCreate your official frame & lock in:\nhhgoa-id.netlify.app\n\n#FrameInGoa @247pmstudio #Hackathon #Hackerhousegoa`;
+  return `Ready to build, ship, and make waves at Hacker House Goa 2026! 🌴🚀\n\nJust generated my official Builder Card as ${who}${role}.\n\nCreate your official frame:\nhhgoa-id.netlify.app\n\n#FrameInGoa @247pmstudio #Hackathon #Hackerhousegoa`;
+}
+
+export function linkedinShareCaption(name?: string, title?: string, shareUrl?: string): string {
+  const who = name?.trim() ? name.trim() : "a builder";
+  const role = title?.trim() ? ` (${title.trim()})` : "";
+
+  let link = shareUrl || "hhgoa-id.netlify.app";
+  if (link.includes("localhost") || link.includes("127.0.0.1")) {
+    link = link.replace(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, "hhgoa-id.netlify.app");
+  }
+  link = link.replace(/^https?:\/\//, "");
+
+  return `Ready to build, ship, and make waves at Hacker House Goa 2026! 🌴 🚀\n\nJust generated my official Builder Card as ${who}${role}.\n\nCreate your official frame here:\n${link}\n\n#FrameInGoa #HackerHouseGoa #BuildInPublic #Goa2026`;
 }

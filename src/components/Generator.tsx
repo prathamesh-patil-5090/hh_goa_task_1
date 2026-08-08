@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import gsap from "gsap";
-import { generateBuilderTitle, shareCaption } from "@/lib/brand";
+import { generateBuilderTitle, shareCaption, linkedinShareCaption } from "@/lib/brand";
 import { CropAdjust, DEFAULT_CROP } from "@/lib/canvas";
 import { generateIdCard, generatePfpFrame } from "@/lib/generate";
 import { blobToImage, normalizePhotoFile } from "@/lib/photo";
 import PhotoAdjuster from "@/components/PhotoAdjuster";
+import { IconX, IconLinkedin } from "@/components/SocialIcons";
 
 type Format = "id" | "pfp";
 
@@ -27,9 +29,19 @@ export default function Generator() {
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [validationToast, setValidationToast] = useState<{
+    missing: string[];
+  } | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const latestUrl = useRef<string | null>(null);
+  const validationToastRef = useRef<HTMLDivElement>(null);
+  const validationTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Track initial load / format change to only play subtle fade on fresh photo/format, never on typing
   const isInitialLoadRef = useRef<boolean>(true);
@@ -43,7 +55,6 @@ export default function Generator() {
   const imgRef = useRef<HTMLImageElement>(null);
   const emptyRef = useRef<HTMLDivElement>(null);
   const downloadBtnRef = useRef<HTMLButtonElement>(null);
-  const shareBtnRef = useRef<HTMLButtonElement>(null);
 
   const builderTitle = useMemo(
     () =>
@@ -240,38 +251,205 @@ export default function Generator() {
     if (fileRef.current) fileRef.current.value = "";
   }
 
-  async function shareToX() {
+  async function shareToPlatform(platform: "x" | "linkedin") {
     if (!blob) return;
     setSharing(true);
     setError(null);
     setToast(null);
 
-    const fullCaption = shareCaption(
-      name || undefined,
-      format === "id" ? builderTitle : undefined,
-    );
+    let createdShareUrl: string | undefined = undefined;
 
-    // 1) Open X intent immediately & synchronously (cannot be popup-blocked)
-    const intent = `https://x.com/intent/post?text=${encodeURIComponent(fullCaption)}`;
-    window.open(intent, "_blank", "noopener,noreferrer");
-
-    // 2) Trigger PNG download so user can attach image
-    download();
-
-    // 3) Fire-and-forget background upload for share page metadata
+    // Background upload for share page metadata
     try {
       const form = new FormData();
       form.append("image", blob, "frame.png");
       form.append("format", format);
       form.append("name", name);
       form.append("title", format === "id" ? builderTitle : "PFP Frame");
-      await fetch("/api/share", { method: "POST", body: form });
+      const res = await fetch("/api/share", { method: "POST", body: form });
+      const data = await res.json();
+      if (data && data.shareUrl) {
+        createdShareUrl = data.shareUrl;
+      }
     } catch {
-      // metadata upload optional — doesn't block X
+      // metadata upload optional
     }
 
-    setToast("Opening X! PNG downloaded — attach it to your post.");
+    if (platform === "linkedin") {
+      const liCaption = linkedinShareCaption(
+        name || undefined,
+        format === "id" ? builderTitle : undefined,
+        createdShareUrl,
+      );
+
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(liCaption);
+        }
+      } catch {
+        // clipboard error fallback
+      }
+
+      const linkedinUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(liCaption)}`;
+      window.open(linkedinUrl, "_blank", "noopener,noreferrer");
+      setToast("Opening LinkedIn! Full caption copied to clipboard — paste if needed.");
+    } else {
+      const fullCaption = shareCaption(
+        name || undefined,
+        format === "id" ? builderTitle : undefined,
+      );
+
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(fullCaption);
+        }
+      } catch {
+        // clipboard error fallback
+      }
+
+      const intent = `https://x.com/intent/post?text=${encodeURIComponent(fullCaption)}`;
+      window.open(intent, "_blank", "noopener,noreferrer");
+      setToast("Opening X! Caption copied with #FrameInGoa.");
+    }
+
     setSharing(false);
+  }
+
+  function checkCompulsoryFields(): string[] {
+    const missing: string[] = [];
+    if (!photo) missing.push("Image / Photo");
+    if (format === "id") {
+      if (!name.trim()) missing.push("Name");
+      if (!stack.trim()) missing.push("Role / Stack");
+      if (!teamName.trim()) missing.push("Team Name");
+      if (!teamCode.trim()) missing.push("Team Code");
+    }
+    return missing;
+  }
+
+  function showValidationPopup(missing: string[]) {
+    if (validationTimerRef.current) {
+      clearTimeout(validationTimerRef.current);
+    }
+    setValidationToast({ missing });
+
+    validationTimerRef.current = setTimeout(() => {
+      dismissValidationPopup();
+    }, 5000);
+  }
+
+  function dismissValidationPopup() {
+    if (validationTimerRef.current) {
+      clearTimeout(validationTimerRef.current);
+      validationTimerRef.current = null;
+    }
+    if (validationToastRef.current) {
+      gsap.to(validationToastRef.current, {
+        opacity: 0,
+        scale: 0.9,
+        y: 15,
+        duration: 0.3,
+        ease: "power2.in",
+        onComplete: () => {
+          setValidationToast(null);
+        },
+      });
+    } else {
+      setValidationToast(null);
+    }
+  }
+
+  // GSAP Entrance animation for validation toast popup (Top on mobile, Bottom-Right on desktop)
+  useEffect(() => {
+    if (validationToast && validationToastRef.current) {
+      const isMobile = typeof window !== "undefined" && window.innerWidth <= 768;
+      gsap.fromTo(
+        validationToastRef.current,
+        {
+          opacity: 0,
+          scale: 0.88,
+          y: isMobile ? -35 : 35,
+        },
+        {
+          opacity: 1,
+          scale: 1,
+          y: 0,
+          duration: 0.45,
+          ease: "back.out(1.7)",
+        }
+      );
+    }
+  }, [validationToast]);
+
+  function handleDownload() {
+    const missing = checkCompulsoryFields();
+    if (missing.length > 0) {
+      showValidationPopup(missing);
+      return;
+    }
+    download();
+  }
+
+  function handleShare(platform: "x" | "linkedin") {
+    const missing = checkCompulsoryFields();
+    if (missing.length > 0) {
+      showValidationPopup(missing);
+      return;
+    }
+    void shareToPlatform(platform);
+  }
+
+  // GSAP silky hover micro-animations
+  function onPillMouseEnter(e: React.MouseEvent<HTMLElement>) {
+    gsap.to(e.currentTarget, {
+      y: -3,
+      scale: 1.02,
+      duration: 0.28,
+      ease: "power2.out",
+    });
+  }
+
+  function onPillMouseLeave(e: React.MouseEvent<HTMLElement>) {
+    gsap.to(e.currentTarget, {
+      y: 0,
+      scale: 1,
+      duration: 0.35,
+      ease: "power2.out",
+    });
+  }
+
+  function onIconMouseEnter(e: React.MouseEvent<HTMLButtonElement>, rotateDeg: number) {
+    const icon = e.currentTarget.querySelector("svg");
+    gsap.to(e.currentTarget, {
+      scale: 1.22,
+      rotation: rotateDeg,
+      duration: 0.3,
+      ease: "back.out(2)",
+    });
+    if (icon) {
+      gsap.to(icon, {
+        scale: 1.15,
+        duration: 0.3,
+        ease: "power2.out",
+      });
+    }
+  }
+
+  function onIconMouseLeave(e: React.MouseEvent<HTMLButtonElement>) {
+    const icon = e.currentTarget.querySelector("svg");
+    gsap.to(e.currentTarget, {
+      scale: 1,
+      rotation: 0,
+      duration: 0.35,
+      ease: "power2.out",
+    });
+    if (icon) {
+      gsap.to(icon, {
+        scale: 1,
+        duration: 0.35,
+        ease: "power2.out",
+      });
+    }
   }
 
   return (
@@ -398,20 +576,46 @@ export default function Generator() {
             type="button"
             ref={downloadBtnRef}
             className="btn accent"
-            disabled={!blob || busy}
-            onClick={download}
+            disabled={busy}
+            onClick={handleDownload}
+            onMouseEnter={onPillMouseEnter}
+            onMouseLeave={onPillMouseLeave}
           >
             Download PNG
           </button>
-          <button
-            type="button"
-            ref={shareBtnRef}
-            className="btn pink"
-            disabled={!blob || sharing || busy}
-            onClick={() => void shareToX()}
+          <div
+            className="share-pill-bar"
+            onMouseEnter={onPillMouseEnter}
+            onMouseLeave={onPillMouseLeave}
           >
-            {sharing ? "Opening X..." : "Share to X"}
-          </button>
+            <span className="share-pill-label">Share to</span>
+            <div className="share-pill-icons">
+              <button
+                type="button"
+                className="share-icon-btn x-btn"
+                title="Share to X"
+                aria-label="Share to X"
+                disabled={sharing || busy}
+                onClick={() => handleShare("x")}
+                onMouseEnter={(e) => onIconMouseEnter(e, -6)}
+                onMouseLeave={onIconMouseLeave}
+              >
+                <IconX />
+              </button>
+              <button
+                type="button"
+                className="share-icon-btn li-btn"
+                title="Share to LinkedIn"
+                aria-label="Share to LinkedIn"
+                disabled={sharing || busy}
+                onClick={() => handleShare("linkedin")}
+                onMouseEnter={(e) => onIconMouseEnter(e, 6)}
+                onMouseLeave={onIconMouseLeave}
+              >
+                <IconLinkedin />
+              </button>
+            </div>
+          </div>
         </div>
         {blob ? (
           <button type="button" className="btn ghost-reset" onClick={resetForm}>
@@ -419,8 +623,38 @@ export default function Generator() {
           </button>
         ) : null}
         <p className="share-note">
-          Share to X attaches your graphic on mobile, or opens a pre-filled post with a preview link to your exact frame — including #FrameInGoa.
+          1-click share opens a pre-filled post with #FrameInGoa for X &amp; LinkedIn. Use &apos;Download PNG&apos; to save your graphic anytime.
         </p>
+
+        {mounted && validationToast
+          ? createPortal(
+              <div className="validation-toast-popup" ref={validationToastRef}>
+                <div className="v-toast-header">
+                  <span className="v-toast-tag">⚠️ REQUIRED</span>
+                  <button
+                    type="button"
+                    className="v-toast-close"
+                    onClick={dismissValidationPopup}
+                    aria-label="Close notification"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <p className="v-toast-body">
+                  Complete these fields to share or download:
+                </p>
+                <div className="v-toast-badges">
+                  {validationToast.missing.map((item) => (
+                    <span key={item} className="v-toast-badge">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+                <div className="v-toast-progress-bar" />
+              </div>,
+              document.body
+            )
+          : null}
       </div>
     </section>
   );

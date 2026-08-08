@@ -26,8 +26,13 @@ export async function POST(req: NextRequest) {
       title: title || undefined,
     });
 
-    // Always use this request's origin — that's where the PNG was actually stored.
-    const site = req.nextUrl.origin.replace(/\/$/, "");
+    const envSite = process.env.NEXT_PUBLIC_SITE_URL;
+    const origin = req.nextUrl.origin.replace(/\/$/, "");
+    const site = envSite
+      ? envSite.replace(/\/$/, "")
+      : origin.includes("localhost") || origin.includes("127.0.0.1")
+        ? "https://hhgoa-id.netlify.app"
+        : origin;
     const shareUrl = `${site}/s/${meta.id}`;
     const imageUrl = `${site}/api/share/${meta.id}`;
 

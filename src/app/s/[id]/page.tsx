@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { EVENT, shareCaption } from "@/lib/brand";
+import { EVENT, shareCaption, linkedinShareCaption } from "@/lib/brand";
 import { getShareMeta } from "@/lib/storage";
+import { IconX, IconLinkedin } from "@/components/SocialIcons";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -60,7 +61,9 @@ export default async function SharePage({ params }: Props) {
   const imageUrl = `/api/share/${id}`;
   const caption = shareCaption(meta.name, meta.title);
   const sharePageUrl = `${siteUrl()}/s/${id}`;
-  const tweet = `https://x.com/intent/post?text=${encodeURIComponent(caption)}&url=${encodeURIComponent(sharePageUrl)}`;
+  const tweetUrl = `https://x.com/intent/post?text=${encodeURIComponent(caption)}&url=${encodeURIComponent(sharePageUrl)}`;
+  const liCaption = linkedinShareCaption(meta.name, meta.title, sharePageUrl);
+  const linkedinUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(liCaption)}`;
 
   return (
     <main className="share-page">
@@ -71,12 +74,34 @@ export default async function SharePage({ params }: Props) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="share-art" src={imageUrl} alt="Generated HH Goa graphic" />
         <div className="share-actions">
-          <a className="btn pink" href={imageUrl} download={`hh-goa-${id}.png`}>
-            Download
+          <a className="btn accent" href={imageUrl} download={`hh-goa-${id}.png`}>
+            Download PNG
           </a>
-          <a className="btn accent" href={tweet} target="_blank" rel="noreferrer">
-            Share to X
-          </a>
+          <div className="share-pill-bar">
+            <span className="share-pill-label">Share to</span>
+            <div className="share-pill-icons">
+              <a
+                className="share-icon-btn x-btn"
+                href={tweetUrl}
+                target="_blank"
+                rel="noreferrer"
+                title="Share to X"
+                aria-label="Share to X"
+              >
+                <IconX />
+              </a>
+              <a
+                className="share-icon-btn li-btn"
+                href={linkedinUrl}
+                target="_blank"
+                rel="noreferrer"
+                title="Share to LinkedIn"
+                aria-label="Share to LinkedIn"
+              >
+                <IconLinkedin />
+              </a>
+            </div>
+          </div>
           <Link className="btn ghost" href="/">
             Make yours
           </Link>
