@@ -225,7 +225,7 @@ export default function Generator() {
         name || undefined,
         format === "id" ? builderTitle : undefined,
       );
-      const intent = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(data.shareUrl)}`;
+      const intent = `https://x.com/intent/post?text=${encodeURIComponent(text)}`;
       window.open(intent, "_blank", "noopener,noreferrer");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Share failed");
@@ -270,7 +270,7 @@ export default function Generator() {
             onChange={(e) => void onFile(e.target.files?.[0])}
           />
           <span className="upload-kicker">Drop a selfie or pick from camera roll</span>
-          <strong>{photo ? "Photo locked in — swap anytime" : "Upload photo"}</strong>
+          <strong>{photo ? "Photo locked in - swap anytime" : "Upload photo"}</strong>
           <span className="upload-hint">JPG · PNG · WEBP · HEIC</span>
         </label>
 
@@ -322,7 +322,7 @@ export default function Generator() {
           </div>
         ) : (
           <p className="pfp-note">
-            Square crop, ready for your X profile. Your photo stays center-stage —
+            Square crop, ready for your X profile. Your photo stays center-stage -
             HH Goa branding wraps the edge.
           </p>
         )}

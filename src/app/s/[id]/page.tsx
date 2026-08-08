@@ -60,7 +60,7 @@ export default async function SharePage({ params }: Props) {
 
   const imageUrl = `/api/share/${id}`;
   const caption = shareCaption(meta.name, meta.title);
-  const tweet = `https://twitter.com/intent/tweet?text=${encodeURIComponent(caption)}&url=${encodeURIComponent(`${siteUrl()}/s/${id}`)}`;
+  const tweet = `https://x.com/intent/post?text=${encodeURIComponent(caption)}`;
 
   return (
     <main className="share-page">

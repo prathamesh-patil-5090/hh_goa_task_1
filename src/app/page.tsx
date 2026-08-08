@@ -34,7 +34,7 @@ export default function HomePage() {
         </h1>
         <p>
           Upload a photo. Walk away with an official Hacker House Goa 2026 builder
-          ID or PFP frame — download it, then post with {EVENT.hashtag}.
+          ID or PFP frame - download it, then post with {EVENT.hashtag}.
         </p>
         <div className="hero-cta">
           <a className="pill" href="#make">

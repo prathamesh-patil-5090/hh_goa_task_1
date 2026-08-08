@@ -143,7 +143,7 @@ export async function generateIdCard(input: IdCardInput): Promise<Blob> {
 
   ctx.fillStyle = BRAND.accent;
   ctx.font = `800 20px ${mono}`;
-  ctx.fillText("OPEN TRIALS · OCT 28–31", cardX + 40, cardY + 104);
+  ctx.fillText("OPEN TRIALS · OCT 28-31", cardX + 40, cardY + 104);
 
   try {
     const studioImg = await loadImage("/brand/2-47.svg");
@@ -363,7 +363,7 @@ export async function generatePfpFrame(photo: CanvasImageSource): Promise<Blob> 
 
   ctx.fillStyle = BRAND.accent;
   ctx.font = `800 20px ${mono}`;
-  ctx.fillText(`OPEN TRIALS · OCT 28–31  ·  ${EVENT.hashtag}`, inset + 40, bannerY + 110);
+  ctx.fillText(`OPEN TRIALS · OCT 28-31  ·  ${EVENT.hashtag}`, inset + 40, bannerY + 110);
 
   try {
     const studioImg = await loadImage("/brand/2-47.svg");
