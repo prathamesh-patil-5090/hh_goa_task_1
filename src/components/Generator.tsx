@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
@@ -418,7 +418,7 @@ export default function Generator() {
         </div>
         {blob ? (
           <button type="button" className="btn ghost-reset" onClick={resetForm}>
-            + Create Another Frame
+            <span className="reset-icon">＋</span> Create Another Frame
           </button>
         ) : null}
         {/* B10: Updated share note to reflect actual behaviour */}

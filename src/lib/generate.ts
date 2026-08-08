@@ -181,7 +181,7 @@ export async function generateIdCard(input: IdCardInput): Promise<Blob> {
   ctx.stroke();
 
   // Clip photo (downscale first for mobile performance)
-  const scaledPhoto = downscalePhoto(input.photo as HTMLImageElement);
+  const scaledPhoto = downscalePhoto(input.photo);
   ctx.save();
   ctx.beginPath();
   ctx.arc(W / 2, photoY + photoSize / 2, photoSize / 2, 0, Math.PI * 2);
@@ -256,11 +256,6 @@ export async function generateIdCard(input: IdCardInput): Promise<Blob> {
   ctx.textAlign = "left";
   ctx.fillText(EVENT.place, cardX + 40, footY);
 
-  ctx.fillStyle = BRAND.pink;
-  ctx.font = `800 20px ${mono}`;
-  ctx.textAlign = "center";
-  ctx.fillText(EVENT.hashtag, W / 2, footY);
-
   ctx.fillStyle = BRAND.primary;
   ctx.font = `700 20px ${mono}`;
   ctx.textAlign = "right";
@@ -274,11 +269,11 @@ export async function generateIdCard(input: IdCardInput): Promise<Blob> {
   ctx.lineTo(cardX + cardW - 40, footY - 28);
   ctx.stroke();
 
-  // Outer brand strip (studio only — hashtag already in footer)
+  // Outer hashtag and studio strip
   ctx.fillStyle = BRAND.accent;
   ctx.font = `800 22px ${mono}`;
   ctx.textAlign = "center";
-  ctx.fillText(EVENT.studio, W / 2, H - 28);
+  ctx.fillText(`${EVENT.hashtag}  ·  ${EVENT.studio}`, W / 2, H - 28);
 
   return canvasToBlob(canvas, "image/png");
 }
@@ -306,7 +301,7 @@ export async function generatePfpFrame(photo: CanvasImageSource): Promise<Blob> 
 
   // Photo well (downscale for mobile performance)
   const inset = outer;
-  const scaledPfpPhoto = downscalePhoto(photo as HTMLImageElement);
+  const scaledPfpPhoto = downscalePhoto(photo);
   ctx.fillStyle = BRAND.black;
   ctx.fillRect(inset, inset, size - inset * 2, size - inset * 2);
   drawCover(ctx, scaledPfpPhoto, inset, inset, size - inset * 2, size - inset * 2);

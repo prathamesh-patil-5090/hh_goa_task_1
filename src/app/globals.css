@@ -504,6 +504,45 @@ a {
   color: var(--primary);
 }
 
+.btn.ghost-reset {
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.85rem 1.25rem;
+  background: color-mix(in srgb, var(--primary) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--primary) 28%, transparent);
+  border-radius: 999px;
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.btn.ghost-reset:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(11, 104, 57, 0.25);
+}
+
+.btn.ghost-reset:active {
+  transform: translateY(0);
+}
+
+.btn.ghost-reset .reset-icon {
+  font-size: 1.05rem;
+  line-height: 1;
+  font-weight: 900;
+}
+
 .share-note {
   margin: 0.75rem 0 0;
   font-size: 0.75rem;

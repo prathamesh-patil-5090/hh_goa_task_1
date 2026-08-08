@@ -8,13 +8,15 @@ export function drawCover(
   dh: number,
 ) {
   const iw =
-    "naturalWidth" in img && img.naturalWidth
-      ? img.naturalWidth
-      : (img as HTMLImageElement).width || (img as ImageBitmap).width;
+    "naturalWidth" in img && (img as HTMLImageElement).naturalWidth
+      ? (img as HTMLImageElement).naturalWidth
+      : (img as HTMLImageElement).width || (img as ImageBitmap).width || (img as HTMLCanvasElement).width || 0;
   const ih =
-    "naturalHeight" in img && img.naturalHeight
-      ? img.naturalHeight
-      : (img as HTMLImageElement).height || (img as ImageBitmap).height;
+    "naturalHeight" in img && (img as HTMLImageElement).naturalHeight
+      ? (img as HTMLImageElement).naturalHeight
+      : (img as HTMLImageElement).height || (img as ImageBitmap).height || (img as HTMLCanvasElement).height || 0;
+
+  if (!iw || !ih) return;
 
   const scale = Math.max(dw / iw, dh / ih);
   const sw = dw / scale;
@@ -130,12 +132,19 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
 
 // B15: Downscale large photos before canvas draw to prevent slow render on mobile
 export function downscalePhoto(
-  img: HTMLImageElement,
+  img: CanvasImageSource,
   maxDim = 1200,
-): HTMLImageElement {
+): CanvasImageSource {
   if (typeof document === "undefined") return img;
-  const iw = img.naturalWidth || img.width;
-  const ih = img.naturalHeight || img.height;
+  const iw =
+    "naturalWidth" in img && (img as HTMLImageElement).naturalWidth
+      ? (img as HTMLImageElement).naturalWidth
+      : (img as HTMLImageElement).width || (img as ImageBitmap).width || (img as HTMLCanvasElement).width || 0;
+  const ih =
+    "naturalHeight" in img && (img as HTMLImageElement).naturalHeight
+      ? (img as HTMLImageElement).naturalHeight
+      : (img as HTMLImageElement).height || (img as ImageBitmap).height || (img as HTMLCanvasElement).height || 0;
+
   if (!iw || !ih || (iw <= maxDim && ih <= maxDim)) return img;
 
   const scale = Math.min(maxDim / iw, maxDim / ih);
@@ -148,11 +157,7 @@ export function downscalePhoto(
   const octx = off.getContext("2d");
   if (!octx) return img;
   octx.drawImage(img, 0, 0, dw, dh);
-
-  // Return as HTMLImageElement so callers can use naturalWidth (unlike raw canvas)
-  const scaled = new Image();
-  scaled.src = off.toDataURL("image/jpeg", 0.9);
-  return scaled;
+  return off;
 }
 
 export function canvasToBlob(
