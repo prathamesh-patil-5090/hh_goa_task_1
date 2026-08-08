@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import { EVENT, generateBuilderTitle, shareCaption } from "@/lib/brand";
 import { generateIdCard, generatePfpFrame } from "@/lib/generate";
@@ -10,17 +10,27 @@ type Format = "id" | "pfp";
 
 export default function Generator() {
   const [format, setFormat] = useState<Format>("id");
+
+  // Live state (bound to inputs)
   const [name, setName] = useState("");
   const [stack, setStack] = useState("");
   const [teamName, setTeamName] = useState("");
   const [teamCode, setTeamCode] = useState("");
+
+  // B8: Debounced state — canvas only re-renders 300ms after the user stops typing
+  const [debouncedName, setDebouncedName] = useState("");
+  const [debouncedStack, setDebouncedStack] = useState("");
+  const [debouncedTeamName, setDebouncedTeamName] = useState("");
+  const [debouncedTeamCode, setDebouncedTeamCode] = useState("");
+
   const [photo, setPhoto] = useState<HTMLImageElement | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [blob, setBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [sharing, setSharing] = useState(false);
-  const [isPending, startTransition] = useTransition();
+
   const fileRef = useRef<HTMLInputElement>(null);
   const latestUrl = useRef<string | null>(null);
 
@@ -34,23 +44,40 @@ export default function Generator() {
   const downloadBtnRef = useRef<HTMLButtonElement>(null);
   const shareBtnRef = useRef<HTMLButtonElement>(null);
 
+  // B8: 300ms debounce for text fields
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedName(name);
+      setDebouncedStack(stack);
+      setDebouncedTeamName(teamName);
+      setDebouncedTeamCode(teamCode);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [name, stack, teamName, teamCode]);
+
   const builderTitle = useMemo(
-    () => generateBuilderTitle(`${name}|${stack}|${teamName}|${teamCode}|${format}`),
-    [name, stack, teamName, teamCode, format],
+    () =>
+      generateBuilderTitle(
+        `${debouncedName}|${debouncedStack}|${debouncedTeamName}|${debouncedTeamCode}|${format}`,
+      ),
+    [debouncedName, debouncedStack, debouncedTeamName, debouncedTeamCode, format],
   );
+
+  // Auto-dismiss toast after 4s
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   // GSAP smooth sliding indicator & frame transition
   useEffect(() => {
     const updateIndicator = () => {
       const activeBtn = format === "id" ? idBtnRef.current : pfpBtnRef.current;
       if (!activeBtn || !indicatorRef.current) return;
-
-      const leftOffset = activeBtn.offsetLeft;
-      const btnWidth = activeBtn.offsetWidth;
-
       gsap.to(indicatorRef.current, {
-        x: leftOffset,
-        width: btnWidth,
+        x: activeBtn.offsetLeft,
+        width: activeBtn.offsetWidth,
         duration: 0.38,
         ease: "power3.out",
       });
@@ -61,13 +88,8 @@ export default function Generator() {
 
     const activeBtn = format === "id" ? idBtnRef.current : pfpBtnRef.current;
     if (activeBtn) {
-      gsap.fromTo(
-        activeBtn,
-        { scale: 0.93 },
-        { scale: 1, duration: 0.35, ease: "back.out(2)" },
-      );
+      gsap.fromTo(activeBtn, { scale: 0.93 }, { scale: 1, duration: 0.35, ease: "back.out(2)" });
     }
-
     if (previewFrameRef.current) {
       gsap.fromTo(
         previewFrameRef.current,
@@ -76,12 +98,10 @@ export default function Generator() {
       );
     }
 
-    return () => {
-      window.removeEventListener("resize", updateIndicator);
-    };
+    return () => window.removeEventListener("resize", updateIndicator);
   }, [format]);
 
-  // GSAP smooth animation when generated image preview changes
+  // GSAP animation when preview image changes
   useEffect(() => {
     if (previewUrl && imgRef.current) {
       gsap.fromTo(
@@ -92,7 +112,7 @@ export default function Generator() {
     }
   }, [previewUrl]);
 
-  // GSAP animation for empty preview state
+  // GSAP animation for empty state
   useEffect(() => {
     if (!previewUrl && emptyRef.current) {
       gsap.fromTo(
@@ -103,7 +123,7 @@ export default function Generator() {
     }
   }, [previewUrl, format]);
 
-  // GSAP spring animation when download & share buttons become active
+  // GSAP spring animation when buttons become active
   useEffect(() => {
     if (blob) {
       if (downloadBtnRef.current) {
@@ -123,6 +143,7 @@ export default function Generator() {
     }
   }, [blob]);
 
+  // Cleanup object URL on unmount
   useEffect(() => {
     return () => {
       if (latestUrl.current) URL.revokeObjectURL(latestUrl.current);
@@ -132,6 +153,7 @@ export default function Generator() {
   async function onFile(file: File | undefined) {
     if (!file) return;
     setError(null);
+    setToast(null);
     setBusy(true);
     try {
       const normalized = await normalizePhotoFile(file);
@@ -145,6 +167,7 @@ export default function Generator() {
     }
   }
 
+  // B7: Removed startTransition wrapper — it must be synchronous but we need async
   useEffect(() => {
     if (!photo) {
       setPreviewUrl(null);
@@ -153,42 +176,38 @@ export default function Generator() {
     }
 
     let cancelled = false;
-    startTransition(() => {
-      void (async () => {
-        setBusy(true);
-        setError(null);
-        try {
-          const out =
-            format === "pfp"
-              ? await generatePfpFrame(photo)
-              : await generateIdCard({
-                  photo,
-                  name,
-                  stack,
-                  teamName,
-                  teamCode,
-                  builderTitle,
-                });
-          if (cancelled) return;
-          if (latestUrl.current) URL.revokeObjectURL(latestUrl.current);
-          const url = URL.createObjectURL(out);
-          latestUrl.current = url;
-          setBlob(out);
-          setPreviewUrl(url);
-        } catch (e) {
-          if (!cancelled) {
-            setError(e instanceof Error ? e.message : "Generation failed");
-          }
-        } finally {
-          if (!cancelled) setBusy(false);
-        }
-      })();
-    });
+    void (async () => {
+      setBusy(true);
+      setError(null);
+      try {
+        const out =
+          format === "pfp"
+            ? await generatePfpFrame(photo)
+            : await generateIdCard({
+                photo,
+                name: debouncedName,
+                stack: debouncedStack,
+                teamName: debouncedTeamName,
+                teamCode: debouncedTeamCode,
+                builderTitle,
+              });
+        if (cancelled) return;
+        if (latestUrl.current) URL.revokeObjectURL(latestUrl.current);
+        const url = URL.createObjectURL(out);
+        latestUrl.current = url;
+        setBlob(out);
+        setPreviewUrl(url);
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Generation failed");
+      } finally {
+        if (!cancelled) setBusy(false);
+      }
+    })();
 
     return () => {
       cancelled = true;
     };
-  }, [photo, format, name, stack, teamName, teamCode, builderTitle]);
+  }, [photo, format, debouncedName, debouncedStack, debouncedTeamName, debouncedTeamCode, builderTitle]);
 
   function download() {
     if (!blob || !previewUrl) return;
@@ -197,41 +216,74 @@ export default function Generator() {
     a.download =
       format === "pfp"
         ? `hh-goa-2026-pfp.png`
-        : `hh-goa-2026-id-${(name || "builder").toLowerCase().replace(/\s+/g, "-")}.png`;
+        : `hh-goa-2026-id-${(debouncedName || "builder").toLowerCase().replace(/\s+/g, "-")}.png`;
     a.click();
   }
 
+  function resetForm() {
+    setPhoto(null);
+    setName("");
+    setStack("");
+    setTeamName("");
+    setTeamCode("");
+    setPreviewUrl(null);
+    setBlob(null);
+    setError(null);
+    setToast(null);
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  // B1 + B2: window.open called SYNCHRONOUSLY first (before any await)
+  // so popup blockers can't block it. Upload is fire-and-forget — X opens regardless.
   async function shareToX() {
     if (!blob) return;
     setSharing(true);
     setError(null);
+    setToast(null);
+
+    const fullCaption = shareCaption(
+      debouncedName || undefined,
+      format === "id" ? builderTitle : undefined,
+    );
+
+    // Step 1: Open X immediately (synchronous — cannot be popup-blocked)
+    const intent = `https://x.com/intent/post?text=${encodeURIComponent(fullCaption)}`;
+    window.open(intent, "_blank", "noopener,noreferrer");
+
+    // Step 2: Download PNG
+    download();
+
+    // Step 3: Try clipboard (silent fail on iOS Safari — no crash)
+    let copiedImage = false;
+    try {
+      if (navigator?.clipboard?.write) {
+        await navigator.clipboard.write([
+          new ClipboardItem({ "image/png": blob }),
+        ]);
+        copiedImage = true;
+      }
+    } catch {
+      // gracefully skip — clipboard not available on all platforms
+    }
+
+    // Step 4: Background metadata upload (B2: does NOT block X redirect)
     try {
       const form = new FormData();
       form.append("image", blob, "frame.png");
       form.append("format", format);
-      form.append("name", name);
+      form.append("name", debouncedName);
       form.append("title", format === "id" ? builderTitle : "PFP Frame");
-
-      const res = await fetch("/api/share", { method: "POST", body: form });
-      const data = (await res.json()) as {
-        shareUrl?: string;
-        error?: string;
-      };
-      if (!res.ok || !data.shareUrl) {
-        throw new Error(data.error || "Share upload failed");
-      }
-
-      const text = shareCaption(
-        name || undefined,
-        format === "id" ? builderTitle : undefined,
-      );
-      const intent = `https://x.com/intent/post?text=${encodeURIComponent(text)}`;
-      window.open(intent, "_blank", "noopener,noreferrer");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Share failed");
-    } finally {
-      setSharing(false);
+      await fetch("/api/share", { method: "POST", body: form });
+    } catch {
+      // ignore — metadata upload is optional
     }
+
+    setToast(
+      copiedImage
+        ? "Opening X! PNG copied to clipboard (Ctrl+V to paste)."
+        : "Opening X! PNG downloaded — attach it to your post.",
+    );
+    setSharing(false);
   }
 
   return (
@@ -328,6 +380,7 @@ export default function Generator() {
         )}
 
         {error ? <p className="error">{error}</p> : null}
+        {toast ? <div className="toast">{toast}</div> : null}
       </div>
 
       <div className="preview-panel" ref={previewFrameRef}>
@@ -338,7 +391,7 @@ export default function Generator() {
           ) : (
             <div className="preview-empty" ref={emptyRef}>
               <p>Your {format === "id" ? "builder ID" : "PFP frame"} appears here</p>
-              <span>{busy || isPending ? "Rendering…" : "Upload to start"}</span>
+              <span>{busy ? "Rendering..." : "Upload to start"}</span>
             </div>
           )}
         </div>
@@ -360,12 +413,17 @@ export default function Generator() {
             disabled={!blob || sharing || busy}
             onClick={() => void shareToX()}
           >
-            {sharing ? "Preparing…" : "Share to X"}
+            {sharing ? "Opening X..." : "Share to X"}
           </button>
         </div>
+        {blob ? (
+          <button type="button" className="btn ghost-reset" onClick={resetForm}>
+            + Create Another Frame
+          </button>
+        ) : null}
+        {/* B10: Updated share note to reflect actual behaviour */}
         <p className="share-note">
-          Share opens a pre-filled post with {EVENT.hashtag} and a link whose preview
-          is your exact graphic.
+          X opens instantly with a pre-filled caption. Your PNG downloads automatically - attach it to the post.
         </p>
       </div>
     </section>

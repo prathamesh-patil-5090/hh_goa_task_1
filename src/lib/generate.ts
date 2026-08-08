@@ -2,6 +2,7 @@ import { BRAND, EVENT, generateBuilderTitle } from "./brand";
 import {
   brandFonts,
   canvasToBlob,
+  downscalePhoto,
   drawCover,
   fillRoundRect,
   loadImage,
@@ -179,13 +180,14 @@ export async function generateIdCard(input: IdCardInput): Promise<Blob> {
   ctx.arc(W / 2, photoY + photoSize / 2, photoSize / 2 + 6, 0, Math.PI * 2);
   ctx.stroke();
 
-  // Clip photo
+  // Clip photo (downscale first for mobile performance)
+  const scaledPhoto = downscalePhoto(input.photo as HTMLImageElement);
   ctx.save();
   ctx.beginPath();
   ctx.arc(W / 2, photoY + photoSize / 2, photoSize / 2, 0, Math.PI * 2);
   ctx.closePath();
   ctx.clip();
-  drawCover(ctx, input.photo, photoX, photoY, photoSize, photoSize);
+  drawCover(ctx, scaledPhoto, photoX, photoY, photoSize, photoSize);
   ctx.restore();
 
   // Name
@@ -272,11 +274,11 @@ export async function generateIdCard(input: IdCardInput): Promise<Blob> {
   ctx.lineTo(cardX + cardW - 40, footY - 28);
   ctx.stroke();
 
-  // Outer hashtag strip
+  // Outer brand strip (studio only — hashtag already in footer)
   ctx.fillStyle = BRAND.accent;
   ctx.font = `800 22px ${mono}`;
   ctx.textAlign = "center";
-  ctx.fillText(`${EVENT.hashtag}  ·  ${EVENT.studio}`, W / 2, H - 28);
+  ctx.fillText(EVENT.studio, W / 2, H - 28);
 
   return canvasToBlob(canvas, "image/png");
 }
@@ -302,11 +304,12 @@ export async function generatePfpFrame(photo: CanvasImageSource): Promise<Blob> 
   ctx.fillStyle = BRAND.accent;
   ctx.fillRect(outer - mid, outer - mid, size - (outer - mid) * 2, size - (outer - mid) * 2);
 
-  // Photo well
+  // Photo well (downscale for mobile performance)
   const inset = outer;
+  const scaledPfpPhoto = downscalePhoto(photo as HTMLImageElement);
   ctx.fillStyle = BRAND.black;
   ctx.fillRect(inset, inset, size - inset * 2, size - inset * 2);
-  drawCover(ctx, photo, inset, inset, size - inset * 2, size - inset * 2);
+  drawCover(ctx, scaledPfpPhoto, inset, inset, size - inset * 2, size - inset * 2);
 
   // Pink corner brackets
   const c = 70;

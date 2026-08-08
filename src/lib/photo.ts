@@ -23,7 +23,7 @@ export function blobToImage(blob: Blob): Promise<HTMLImageElement> {
     const url = URL.createObjectURL(blob);
     const img = new Image();
     img.onload = () => {
-      URL.revokeObjectURL(url);
+      // Do NOT revoke here — canvas may re-read img.src at draw time (Safari)
       resolve(img);
     };
     img.onerror = () => {

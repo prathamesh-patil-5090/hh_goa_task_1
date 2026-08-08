@@ -15,7 +15,12 @@ type MemoryEntry = { meta: ShareMeta; image: Buffer };
 const memory = new Map<string, MemoryEntry>();
 
 function sharesDir() {
-  if (process.env.VERCEL) {
+  const isServerless =
+    process.env.VERCEL ||
+    process.env.NETLIFY ||
+    process.env.LAMBDA_TASK_ROOT ||
+    process.env.AWS_LAMBDA_FUNCTION_NAME;
+  if (isServerless) {
     return path.join("/tmp", "hh-goa-shares");
   }
   return path.join(process.cwd(), "data", "shares");

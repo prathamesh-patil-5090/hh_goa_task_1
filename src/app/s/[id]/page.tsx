@@ -7,10 +7,9 @@ import { getShareMeta } from "@/lib/storage";
 type Props = { params: Promise<{ id: string }> };
 
 function siteUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(
-    /\/$/,
-    "",
-  );
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL || "https://hhgoa-id.netlify.app"
+  ).replace(/\/$/, "");
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -37,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: [
         {
           url: image,
-          width: meta.format === "pfp" ? 1080 : 1080,
+          width: 1080,
           height: meta.format === "pfp" ? 1080 : 1350,
           type: "image/png",
         },

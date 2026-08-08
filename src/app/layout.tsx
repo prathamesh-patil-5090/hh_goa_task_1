@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   description:
     "Upload a photo and get a branded Hacker House Goa 2026 builder ID or PFP frame - download and share with #FrameInGoa.",
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+    process.env.NEXT_PUBLIC_SITE_URL || "https://hhgoa-id.netlify.app",
   ),
   openGraph: {
     title: "HH Goa 2026 · Frame / ID Generator",

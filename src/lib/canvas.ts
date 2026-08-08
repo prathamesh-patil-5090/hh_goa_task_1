@@ -72,6 +72,24 @@ export function strokeRoundRect(
   ctx.stroke();
 }
 
+// B4: Polyfill ctx.roundRect for Firefox <112, Chrome Android <105, Samsung Internet <21
+if (
+  typeof CanvasRenderingContext2D !== "undefined" &&
+  !CanvasRenderingContext2D.prototype.roundRect
+) {
+  CanvasRenderingContext2D.prototype.roundRect = function (
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    r: number | number[] = 0,
+  ) {
+    const radius = Array.isArray(r) ? (r[0] ?? 0) : r;
+    roundRectPath(this, x, y, w, h, Number(radius));
+    return this;
+  };
+}
+
 export async function waitForFonts() {
   if (typeof document !== "undefined" && document.fonts?.ready) {
     await document.fonts.ready;
@@ -91,14 +109,50 @@ export function brandFonts() {
   return { display, mono };
 }
 
+// B14: Module-level image cache — brand assets loaded once, reused on every card generation
+const imageCache = new Map<string, HTMLImageElement>();
+
 export function loadImage(src: string): Promise<HTMLImageElement> {
+  const cached = imageCache.get(src);
+  if (cached) return Promise.resolve(cached);
+
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
-    img.onload = () => resolve(img);
+    img.onload = () => {
+      imageCache.set(src, img);
+      resolve(img);
+    };
     img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
     img.src = src;
   });
+}
+
+// B15: Downscale large photos before canvas draw to prevent slow render on mobile
+export function downscalePhoto(
+  img: HTMLImageElement,
+  maxDim = 1200,
+): HTMLImageElement {
+  if (typeof document === "undefined") return img;
+  const iw = img.naturalWidth || img.width;
+  const ih = img.naturalHeight || img.height;
+  if (!iw || !ih || (iw <= maxDim && ih <= maxDim)) return img;
+
+  const scale = Math.min(maxDim / iw, maxDim / ih);
+  const dw = Math.round(iw * scale);
+  const dh = Math.round(ih * scale);
+
+  const off = document.createElement("canvas");
+  off.width = dw;
+  off.height = dh;
+  const octx = off.getContext("2d");
+  if (!octx) return img;
+  octx.drawImage(img, 0, 0, dw, dh);
+
+  // Return as HTMLImageElement so callers can use naturalWidth (unlike raw canvas)
+  const scaled = new Image();
+  scaled.src = off.toDataURL("image/jpeg", 0.9);
+  return scaled;
 }
 
 export function canvasToBlob(
@@ -139,3 +193,4 @@ export function wrapText(
   lines.push(line);
   return lines;
 }
+
